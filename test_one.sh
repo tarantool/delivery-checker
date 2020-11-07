@@ -58,7 +58,7 @@ done
 
 if [ -z "${os}" ]; then
     os="$(basename ${image})"
-    if [ "${os}" == "tarantool" ]; then
+    if [ "${os}" = "tarantool" ]; then
         os="docker"
     fi
 fi

@@ -1,3 +1,5 @@
+#!/usr/bin/env tarantool
+
 local log = require('log')
 local fio = require('fio')
 local json = require('json')
