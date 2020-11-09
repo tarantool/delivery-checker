@@ -1,23 +1,36 @@
 #!/usr/bin/env python3
-
+import json
 import os
 import shutil
 
 import requests
 
-from docker_builder import DockerBuilder, DockerInfo
-from vm_builder import VmBuilder, VmInfo
+from builders.docker import DockerBuilder, DockerInfo
+from builders.virtual_box import VirtualBoxBuilder, VirtualBoxInfo
 
 
 class Tester:
-    def __init__(self):
-        self.__logs = []
-        self.__docker = DockerBuilder(log_func=lambda msg: self.__logs.append(msg))
-        self.__vm = VmBuilder(log_func=lambda msg: self.__logs.append(msg))
-        self.__builds = self.download_scripts()
+    def __init__(
+        self,
+        config_path='./config.json',
+        commands_url='https://www.tarantool.io/api/tarantool/info/versions/',
+    ):
+        with open(config_path, 'r') as fs:
+            config = json.load(fs)
 
-    @staticmethod
-    def download_scripts(commands_url='https://www.tarantool.io/api/tarantool/info/versions/', scripts_dir='./install'):
+        self.__logs = []
+
+        def log_func(msg): self.__logs.append(msg)
+
+        docker_config = {k: v['docker'] for k, v in config.items() if v.get('docker') is not None}
+        self.__docker = DockerBuilder(config=docker_config, log_func=log_func)
+
+        virtual_box_config = {k: v['virtual_box'] for k, v in config.items() if v.get('virtual_box') is not None}
+        self.__virtual_box = VirtualBoxBuilder(config=virtual_box_config, log_func=log_func)
+
+        self.__builds = self.download_scripts(commands_url)
+
+    def download_scripts(self, commands_url, scripts_dir='./install'):
         site_commands = requests.get(commands_url).json()
 
         with open(os.path.join(scripts_dir, 'default.sh'), mode='r') as fs:
@@ -26,18 +39,18 @@ class Tester:
         builds = []
         for os_name, versions in site_commands.items():
             for build_name, commands in versions.items():
-                if os_name == 'docker':
-                    commands = []
-
+                # Remove os name from build name (ubuntu_manual_2.4 -> manual_2.4)
                 build_name = '_'.join(build_name.split('_')[1:])
 
-                docker_builds = DockerBuilder.get_builds(os_name, build_name)
-                if docker_builds:
-                    builds += docker_builds
+                # This is to avoid running Docker in Docker or Docker in VirtualBox
+                if os_name != 'docker':
+                    builds += self.__docker.get_builds(os_name, build_name)
+                    builds += self.__virtual_box.get_builds(os_name, build_name)
 
-                vm_builds = VmBuilder.get_builds(os_name, build_name)
-                if vm_builds:
-                    builds += vm_builds
+                # Find name of image in commands and use it
+                else:
+                    builds += self.__docker.get_docker_builds(os_name, build_name, commands)
+                    commands = []
 
                 path = os.path.join(scripts_dir, f'{os_name}_{build_name}.sh')
                 with open(path, mode='w') as fs:
@@ -47,27 +60,72 @@ class Tester:
 
         return builds
 
-    def test_builds(self, results_dir='./results'):
+    def test_builds(self, results_dir='./results', logs_dir='./logs'):
         shutil.rmtree(results_dir, ignore_errors=True)
+        shutil.rmtree(logs_dir, ignore_errors=True)
+
         os.makedirs(results_dir)
+        os.makedirs(logs_dir)
+
+        results = {}
+        is_all_ok = True
 
         for build in self.__builds:
             self.__logs.clear()
 
             if isinstance(build, DockerInfo):
-                print(f'OS: {build.os_name} {build.image_version}. Build: {build.build_name}. Deploying... ', end='')
-                deploy_result = self.__docker.deploy(build)
-            elif isinstance(build, VmInfo):
-                print(f'OS: {build.vm_name}. Build: {build.build_name}. Deploying... ', end='')
-                deploy_result = self.__vm.deploy(build)
+                os_name = f'{build.os_name}_{build.image_version}'
+            elif isinstance(build, VirtualBoxInfo):
+                os_name = f'{build.vm_name}'
             else:
-                deploy_result = False
+                os_name = build.os_name
 
-            if deploy_result:
-                print('OK')
+            print(f'OS: {os_name}. Build: {build.build_name}. ', end='')
+            results[os_name] = results.get(os_name, {})
+
+            if build.skip:
+                result = 'SKIP'
             else:
-                print('ERROR')
-                print('\n'.join(map(lambda x: str(x), self.__logs)))
+                if isinstance(build, DockerInfo):
+                    deploy_result = self.__docker.deploy(build)
+                elif isinstance(build, VirtualBoxInfo):
+                    deploy_result = self.__virtual_box.deploy(build)
+                else:
+                    deploy_result = False
+
+                if deploy_result:
+                    result = 'OK'
+                else:
+                    result = 'ERROR'
+                    is_all_ok = False
+                    path = os.path.join(logs_dir, f'{os_name}_{build.build_name}.log')
+                    with open(path, mode='w') as fs:
+                        fs.write('\n'.join(map(lambda x: str(x), self.__logs)))
+
+            if result == 'OK':
+                path = os.path.join(results_dir, f'{os_name}_{build.build_name}.json')
+                if os.path.exists(path):
+                    with open(path) as fs:
+                        build_results = json.load(fs)
+                        is_results_ok = True
+                        for build_result in build_results.values():
+                            if build_result != 'OK':
+                                is_results_ok = False
+                                break
+                else:
+                    is_results_ok = False
+
+                if not is_results_ok:
+                    result = 'FAIL'
+                    is_all_ok = False
+
+            print(result)
+            results[os_name][build.build_name] = result
+
+        with open('results.json', mode='w') as fs:
+            fs.write(json.dumps(results))
+
+        return is_all_ok
 
 
 def main():

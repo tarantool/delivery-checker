@@ -1,0 +1,45 @@
+{
+  "amazon-linux": {
+    "docker": {
+      "image": "amazonlinux",
+      "versions": [
+        "1",
+        "2"
+      ]
+    }
+  },
+  "centos": {
+    "docker": {
+      "versions": [
+        "7"
+      ]
+    }
+  },
+  "debian": {
+    "docker": {}
+  },
+  "fedora": {
+    "docker": {
+      "versions": [
+        "31"
+      ]
+    }
+  },
+  "freebsd": {
+    "virtual_box": {
+      "freebsd_12.2": {}
+    }
+  },
+  "macos": {
+    "docker": {
+      "image": "sickcodes/docker-osx"
+    }
+  },
+  "ubuntu": {
+    "docker": {
+      "versions": [
+        "18.04"
+      ]
+    }
+  }
+}

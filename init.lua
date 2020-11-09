@@ -30,7 +30,7 @@ local function write_results(results)
         log.warn('No environment variable RESULTS_FILE. Name "test_results.json" will be used.')
         res_filename = 'test_results.json'
     end
-    local res_fh = fio.open(res_filename, {'O_CREAT', 'O_TRUNC', 'O_WRONLY'}, tonumber('644', 8))
+    local res_fh = fio.open(res_filename, { 'O_CREAT', 'O_TRUNC', 'O_WRONLY' }, tonumber('644', 8))
     res_fh:write(json.encode(results))
     res_fh:close()
 end

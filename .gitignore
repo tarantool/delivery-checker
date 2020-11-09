@@ -3,6 +3,8 @@
 install/*.sh
 !install/default.sh
 results/
+logs/
+results.json
 
 ### JetBrains ###
 

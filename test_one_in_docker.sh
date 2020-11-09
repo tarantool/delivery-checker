@@ -57,17 +57,17 @@ while [ "${1}" != "" ]; do
 done
 
 if [ -z "${os}" ]; then
-    os="$(basename ${image})"
+    os="$(basename "${image}")"
     if [ "${os}" = "tarantool" ]; then
         os="docker"
     fi
 fi
 
-docker rm -f ${name}
+docker rm -f "${name}"
 docker build \
     --build-arg IMAGE=${image} \
     --build-arg VERSION=${version} \
     --build-arg OS_NAME=${os} \
     --build-arg BUILD_NAME=${build} \
-    -t ${name} . && \
-docker run -d -p 3301:3301 --name ${name} -v "$(pwd)/results":/opt/tarantool/results ${name}
+    -t "${name}" . && \
+docker run -d -p 3301:3301 --name "${name}" -v "$(pwd)/results":/opt/tarantool/results "${name}"
