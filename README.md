@@ -54,9 +54,9 @@ because there are some errors.
 ```
 OS: fedora_31. Build: script_2.5. OK
 OS: fedora_31. Build: script_1.10. OK
-OS: fedora_31. Build: nightly_2.5. OK
+OS: fedora_31. Build: nightly_2.5. TIMEOUT
 OS: fedora_31. Build: beta_2.6. OK
-OS: fedora_31. Build: manual_2.5. OK
+OS: fedora_31. Build: manual_2.5. TIMEOUT
 OS: fedora_31. Build: manual_1.10. OK
 OS: freebsd_12.2. Build: pkg_2.4. SKIP
 OS: freebsd_12.2. Build: ports_2.4. SKIP

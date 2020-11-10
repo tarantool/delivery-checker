@@ -87,6 +87,7 @@ class VirtualBoxBuilder:
                 self.log(f'{error_msg}: {e}')
             time.sleep(period)
 
+        self.log(f'{error_msg}: timeout')
         return False
 
     def wait_ssh(self, vm_info: VirtualBoxInfo, timeout=60 * 10):

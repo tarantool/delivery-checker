@@ -100,7 +100,11 @@ class Tester:
                     is_all_ok = False
                     path = os.path.join(logs_dir, f'{os_name}_{build.build_name}.log')
                     with open(path, mode='w') as fs:
-                        fs.write('\n'.join(map(lambda x: str(x), self.__logs)))
+                        logs = '\n'.join(map(lambda x: str(x), self.__logs))
+                        fs.write(logs)
+                        logs = logs.lower()
+                        if 'timeout' in logs or 'timed out' in logs:
+                            result = 'TIMEOUT'
 
             if result == 'OK':
                 path = os.path.join(results_dir, f'{os_name}_{build.build_name}.json')
