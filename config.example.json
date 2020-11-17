@@ -1,0 +1,54 @@
+{
+  "os_params": {
+    "amazon-linux": {
+      "docker": {
+        "image": "amazonlinux",
+        "versions": [
+          "2"
+        ]
+      }
+    },
+    "rhel-centos": {
+      "docker": {
+        "image": "centos",
+        "versions": [
+          "7"
+        ]
+      }
+    },
+    "debian": {
+      "docker": {}
+    },
+    "fedora": {
+      "docker": {
+        "versions": [
+          "31"
+        ]
+      }
+    },
+    "freebsd": {
+      "virtual_box": {
+        "freebsd_12.2": {}
+      }
+    },
+    "os-x": {
+      "virtual_box": {
+        "osx_10.12": {
+          "credentials": {
+            "login": "osx",
+            "password": "osx"
+          },
+          "remote_dir": "/Users/osx/tarantool",
+          "run_timeout": 600
+        }
+      }
+    },
+    "ubuntu": {
+      "docker": {
+        "versions": [
+          "18.04"
+        ]
+      }
+    }
+  }
+}

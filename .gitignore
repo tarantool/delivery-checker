@@ -2,9 +2,9 @@
 
 install/*.sh
 !install/default.sh
-results/
-logs/
-results.json
+local/
+remote/
+config.json
 
 ### JetBrains ###
 

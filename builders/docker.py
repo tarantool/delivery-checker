@@ -1,4 +1,5 @@
 import itertools
+import json
 import os
 import re
 from collections import namedtuple
@@ -14,14 +15,15 @@ DockerInfo = namedtuple(
 
 
 class DockerBuilder:
-    def __init__(self, config, log_func=print):
-        self.config = config
+    def __init__(self, build_info, log_func=print):
         self.log = log_func
+        self.build_info = build_info
         self.__client = docker_from_env()
         self.__build_log = []
 
-    def get_builds(self, os_name='docker', build_name='latest'):
-        params = self.config.get(os_name)
+    @staticmethod
+    def get_builds(config, os_name='docker', build_name='latest'):
+        params = config.get(os_name)
         if params is None:
             return []
 
@@ -99,16 +101,16 @@ class DockerBuilder:
             return image_id
         raise Exception('No image id in logs!')
 
-    def build(self, container_name, build_info, timeout=60 * 15):
+    def build(self, container_name, timeout=60 * 15):
         try:
             self.__build_image(
                 path='.',
                 tag=container_name,
                 buildargs={
-                    'IMAGE': build_info.image,
-                    'VERSION': build_info.image_version,
-                    'OS_NAME': build_info.os_name,
-                    'BUILD_NAME': build_info.build_name,
+                    'IMAGE': self.build_info.image,
+                    'VERSION': self.build_info.image_version,
+                    'OS_NAME': self.build_info.os_name,
+                    'BUILD_NAME': self.build_info.build_name,
                 },
                 timeout=timeout,
                 rm=True,
@@ -127,10 +129,12 @@ class DockerBuilder:
                     logs_string += msg['stream']
                 elif 'error' in msg:
                     logs_string += msg['error']
+                elif 'message' in msg:
+                    logs_string += msg['message']
                 elif 'status' in msg:
                     continue
                 else:
-                    logs_string += msg
+                    logs_string += json.dumps(msg) + '\n'
             for line in logs_string.splitlines():
                 if line:
                     self.log(line)
@@ -143,7 +147,7 @@ class DockerBuilder:
                 image=container_name,
                 name=container_name,
                 ports={3301: 3301},
-                volumes={f'{os.getcwd()}/results': {'bind': '/opt/tarantool/results'}},
+                volumes={f'{os.getcwd()}/local/results': {'bind': '/opt/tarantool/results'}},
                 detach=True,
             )
 
@@ -169,13 +173,14 @@ class DockerBuilder:
 
         return False
 
-    def deploy(self, build_info, container_name='tnt_builder'):
+    def deploy(self, container_name='tnt_builder'):
+        is_success = True
         if not self.rm(container_name):
-            return False
-        if not self.build(container_name, build_info):
-            return False
-        if not self.run(container_name):
-            return False
+            is_success = False
+        if is_success and not self.build(container_name):
+            is_success = False
+        if is_success and not self.run(container_name):
+            is_success = False
         if not self.rm(container_name):
-            return False
-        return True
+            is_success = False
+        return is_success

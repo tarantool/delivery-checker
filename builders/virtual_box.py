@@ -1,29 +1,26 @@
-import logging
 import subprocess
-import time
 from collections import namedtuple
 
-from paramiko import SSHClient, AutoAddPolicy, SFTPClient
+from paramiko import SFTPClient
 from paramiko.common import o777
 
-Credentials = namedtuple(
-    typename='Credentials',
-    field_names=('login', 'password', 'host', 'port', 'work_dir'),
-)
+from builders.ssh import Credentials, SshClient
 
 VirtualBoxInfo = namedtuple(
     typename='VirtualBoxInfo',
-    field_names=('os_name', 'build_name', 'vm_name', 'credentials', 'skip'),
+    field_names=('os_name', 'build_name', 'vm_name', 'credentials', 'remote_dir', 'run_timeout', 'skip'),
 )
 
 
 class VirtualBoxBuilder:
-    def __init__(self, config, log_func=print):
+    def __init__(self, build_info: VirtualBoxInfo, log_func=print):
         self.log = log_func
-        self.config = config
+        self.build_info = build_info
+        self.__ssh_client = None
 
-    def get_builds(self, os_name, build_name):
-        params = self.config.get(os_name)
+    @staticmethod
+    def get_builds(config, os_name, build_name):
+        params = config.get(os_name)
         if params is None:
             return []
 
@@ -37,8 +34,9 @@ class VirtualBoxBuilder:
                     password=vm_params[1].get('credentials', {}).get('password', 'toor'),
                     host=vm_params[1].get('credentials', {}).get('host', '127.0.0.1'),
                     port=vm_params[1].get('credentials', {}).get('port', 10022),
-                    work_dir=vm_params[1].get('credentials', {}).get('work_dir', '/opt/tarantool'),
                 ),
+                remote_dir=vm_params[1].get('remote_dir', '/opt/tarantool'),
+                run_timeout=vm_params[1].get('run_timeout'),
                 skip=build_name in vm_params[1].get('skip', []),
             ),
             params.items(),
@@ -77,82 +75,9 @@ class VirtualBoxBuilder:
                 if not is_good:
                     raise Exception(f'Impossible to execute command "{command}":\n{error}')
 
-    def wait_until(self, func, excepted=None, timeout=30, period=1, error_msg='Impossible to wait', *args, **kwargs):
-        end = time.time() + timeout
-        while time.time() < end:
-            try:
-                if func(*args, **kwargs) == excepted:
-                    return True
-            except Exception as e:
-                self.log(f'{error_msg}: {e}')
-            time.sleep(period)
-
-        self.log(f'{error_msg}: timeout')
-        return False
-
-    def wait_ssh(self, vm_info: VirtualBoxInfo, timeout=60 * 10):
-        with SSHClient() as client:
-            client.set_missing_host_key_policy(AutoAddPolicy())
-
-            old_level = logging.getLogger().level
-            logging.getLogger().setLevel(logging.CRITICAL)
-
-            connected = self.wait_until(
-                lambda: client.connect(
-                    hostname=vm_info.credentials.host, port=vm_info.credentials.port,
-                    timeout=timeout, banner_timeout=timeout, auth_timeout=timeout,
-                    username=vm_info.credentials.login, password=vm_info.credentials.password,
-                ),
-                timeout=timeout,
-                period=5,
-                error_msg='Impossible to connect to virtual machine',
-            )
-
-            logging.getLogger().setLevel(old_level)
-
-            return connected
-
-    def exec_ssh_command(self, client, command, timeout=60, input_data=None):
-        with client.get_transport().open_session() as channel:
-            channel.get_pty()
-            channel.settimeout(timeout)
-
-            channel.exec_command(command)
-            if input_data is not None:
-                channel.send(input_data)
-
-            if self.wait_until(
-                channel.exit_status_ready,
-                excepted=True,
-                timeout=timeout,
-                error_msg='Impossible to check availability to get exit status',
-            ):
-                if channel.recv_exit_status() == 0:
-                    return None
-
-            stdout = ''
-            stderr = ''
-            channel.settimeout(0)
-
-            try:
-                stdout = channel.recv(1024 ** 3).decode()
-            except Exception as e:
-                self.log(f'Impossible to get stdout: "{e}"')
-            try:
-                stderr = channel.recv_stderr(1024 ** 3).decode()
-            except Exception as e:
-                self.log(f'Impossible to get stderr: "{e}"')
-
-            return f'{stdout}\n{stderr}'
-
-    def exec_ssh_commands(self, client, commands, timeout=60):
-        for command in commands:
-            error = self.exec_ssh_command(client, command, timeout)
-            if error:
-                raise Exception(f'Impossible to execute SSH command "{command}":\n{error}')
-
-    def rm(self, vm_name, timeout=60):
+    def rm(self, timeout=60):
         try:
+            vm_name = self.build_info.vm_name
             self.exec_commands(
                 commands=[
                     f'VBoxManage controlvm {vm_name} poweroff',
@@ -174,65 +99,64 @@ class VirtualBoxBuilder:
             self.log(f'Impossible to remove virtual machine:\n{e}')
             return False
 
-    def build(self, vm_info: VirtualBoxInfo, timeout=60 * 10):
+    def build(self, timeout=60 * 10):
         try:
+            vm_name = self.build_info.vm_name
             self.exec_commands(
                 commands=[
-                    f'vboxmanage clonevm {vm_info.vm_name}_base --name {vm_info.vm_name} --mode all --register',
-                    f'vboxmanage startvm --type headless {vm_info.vm_name}',
+                    f'vboxmanage clonevm {vm_name}_base --name {vm_name} --mode all --register',
+                    f'vboxmanage startvm --type headless {vm_name}',
                 ],
                 timeout=timeout,
             )
 
-            return self.wait_ssh(vm_info, timeout)
+            self.__ssh_client = SshClient(self.build_info.credentials, log_func=self.log)
+            return self.__ssh_client.wait_ssh(timeout)
 
         except Exception as e:
             self.log(f'Impossible to clone virtual machine:\n{e}')
             return False
 
-    def run(self, vm_info: VirtualBoxInfo, timeout=60 * 3):
+    def run(self, timeout=60 * 3):
+        if self.build_info.run_timeout is not None:
+            timeout = self.build_info.run_timeout
+
         try:
-            with SSHClient() as ssh:
-                ssh.set_missing_host_key_policy(AutoAddPolicy())
-                ssh.connect(
-                    hostname=vm_info.credentials.host, port=vm_info.credentials.port,
-                    username=vm_info.credentials.login, password=vm_info.credentials.password,
-                )
+            if self.__ssh_client is None:
+                self.__ssh_client = SshClient(self.build_info.credentials, log_func=self.log)
 
-                work_dir = vm_info.credentials.work_dir
-                results_dir = f'{work_dir}/results'
-                results_file = f'{vm_info.os_name}_{vm_info.build_name}.json'
+            remote_dir = self.build_info.remote_dir
+            results_dir = f'{remote_dir}/results'
+            results_file = f'{self.build_info.vm_name}_{self.build_info.build_name}.json'
 
-                self.exec_ssh_commands(
-                    client=ssh,
-                    commands=[
-                        f'mkdir -p {work_dir}',
-                        f'mkdir -p {results_dir}',
-                    ],
-                    timeout=timeout,
-                )
+            self.__ssh_client.exec_ssh_commands(
+                commands=[
+                    f'mkdir -p {remote_dir}',
+                    f'mkdir -p {results_dir}',
+                ],
+                timeout=timeout,
+            )
 
-                sftp: SFTPClient = ssh.open_sftp()
-                sftp.chdir(work_dir)
-                sftp.put(f'prepare/{vm_info.os_name}.sh', 'prepare.sh')
-                sftp.chmod('prepare.sh', o777)
-                sftp.put(f'install/{vm_info.os_name}_{vm_info.build_name}.sh', 'install.sh')
-                sftp.chmod('install.sh', o777)
-                sftp.put('init.lua', f'init.lua')
+            sftp: SFTPClient = self.__ssh_client.get_sftp()
+            sftp.chdir(remote_dir)
+            sftp.put(f'prepare/{self.build_info.os_name}.sh', 'prepare.sh')
+            sftp.chmod('prepare.sh', o777)
+            sftp.put(f'install/{self.build_info.os_name}_{self.build_info.build_name}.sh', 'install.sh')
+            sftp.chmod('install.sh', o777)
+            sftp.put('init.lua', f'init.lua')
 
-                self.exec_ssh_commands(
-                    client=ssh,
-                    commands=[
-                        f'{work_dir}/prepare.sh',
-                        f'{work_dir}/install.sh',
-                        f'cd {work_dir} && '
-                        f'export RESULTS_FILE="{results_dir}/{results_file}" && '
-                        f'tarantool init.lua',
-                    ],
-                    timeout=timeout,
-                )
+            self.__ssh_client.exec_ssh_commands(
+                commands=[
+                    f'{remote_dir}/prepare.sh',
+                    f'{remote_dir}/install.sh',
+                    f'cd {remote_dir} && '
+                    f'export RESULTS_FILE="{results_dir}/{results_file}" && '
+                    f'tarantool init.lua',
+                ],
+                timeout=timeout,
+            )
 
-                sftp.get(f'{results_dir}/{results_file}', f'./results/{results_file}')
+            sftp.get(f'{results_dir}/{results_file}', f'./local/results/{results_file}')
 
             return True
 
@@ -241,13 +165,14 @@ class VirtualBoxBuilder:
 
         return False
 
-    def deploy(self, build_info):
-        if not self.rm(build_info.vm_name):
-            return False
-        if not self.build(build_info):
-            return False
-        if not self.run(build_info):
-            return False
-        if not self.rm(build_info.vm_name):
-            return False
-        return True
+    def deploy(self):
+        is_success = True
+        if not self.rm():
+            is_success = False
+        if is_success and not self.build():
+            is_success = False
+        if is_success and not self.run():
+            is_success = False
+        if not self.rm():
+            is_success = False
+        return is_success

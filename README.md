@@ -8,39 +8,53 @@ and tries to run them on different OS.
 1. Install Python 3.6 or higher
 2. Install Docker or/and VirtualBox
 2. Change `config.json` if necessary
-3. Run `test_all.py`
+3. Run `main.py`
 
 ## Example of config
 
 ```json
 {
-  "example_os": {
-    "docker": {
-      "image": "name_of_docker_image",
-      "versions": [
-        "2020",
-        "latest"
-      ],
-      "skip": [
-        "name_of_build_1",
-        "name_of_build_2"
-      ]
+  "commands_url": "https://www.tarantool.io/api/tarantool/info/versions/",
+  "send_to_remote": {
+    "credentials": {
+      "login": "centos",
+      "password": "centos",
+      "host": "123.456.789.012"
     },
-    "virtual_box": {
-      "Name of VirtualBox VM without '_base' suffix": {
-        "credentials": {
-          "login": "root",
-          "password": "toor",
-          "host": "127.0.0.1",
-          "port": 22,
-          "work_dir": "/root/builder"
-        },
+    "archive": "server_name",
+    "remote_dir": "/opt/delivery_checker/remote"
+  },
+  "load_remote_cache": false,
+  "os_params": {
+    "example_os": {
+      "docker": {
+        "image": "name_of_docker_image",
+        "versions": [
+          "2020",
+          "latest"
+        ],
         "skip": [
           "name_of_build_1",
           "name_of_build_2"
         ]
       },
-      "example_os_vm": {}
+      "virtual_box": {
+        "Name of VirtualBox VM without '_base' suffix": {
+          "credentials": {
+            "login": "root",
+            "password": "toor",
+            "host": "127.0.0.1",
+            "port": 22
+          },
+          "remote_dir": "/opt/tarantool",
+          "run_timeout": 60,
+          "skip": [
+            "name_of_build_1",
+            "name_of_build_2"
+          ]
+        },
+        "example_os_vm": {}
+      }
     }
   }
 }
