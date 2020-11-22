@@ -19,6 +19,9 @@
     "debian": {
       "docker": {}
     },
+    "docker-hub": {
+      "docker": {}
+    },
     "fedora": {
       "docker": {
         "versions": [
@@ -28,15 +31,20 @@
     },
     "freebsd": {
       "virtual_box": {
-        "freebsd_12.2": {}
+        "freebsd_12.2": {
+          "credentials": {
+            "port": 10023
+          }
+        }
       }
     },
     "os-x": {
       "virtual_box": {
-        "osx_10.12": {
+        "os-x_10.12": {
           "credentials": {
             "login": "osx",
-            "password": "osx"
+            "password": "osx",
+            "port": 10024
           },
           "remote_dir": "/Users/osx/tarantool",
           "run_timeout": 600

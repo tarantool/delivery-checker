@@ -10,7 +10,7 @@ and tries to run them on different OS.
 2. Change `config.json` if necessary
 3. Run `main.py`
 
-## Example of config
+## Config with all available options
 
 ```json
 {
@@ -24,7 +24,7 @@ and tries to run them on different OS.
     "archive": "server_name",
     "remote_dir": "/opt/delivery_checker/remote"
   },
-  "load_remote_cache": false,
+  "use_remote_results": false,
   "os_params": {
     "example_os": {
       "docker": {
@@ -36,10 +36,11 @@ and tries to run them on different OS.
         "skip": [
           "name_of_build_1",
           "name_of_build_2"
-        ]
+        ],
+        "no_cache": false
       },
       "virtual_box": {
-        "Name of VirtualBox VM without '_base' suffix": {
+        "Name of VirtualBox VM": {
           "credentials": {
             "login": "root",
             "password": "toor",
@@ -66,15 +67,11 @@ In this case, the process finished with exit code 1
 because there are some errors.
 
 ```
-OS: fedora_31. Build: script_2.5. OK
-OS: fedora_31. Build: script_1.10. OK
-OS: fedora_31. Build: nightly_2.5. TIMEOUT
-OS: fedora_31. Build: beta_2.6. OK
-OS: fedora_31. Build: manual_2.5. TIMEOUT
-OS: fedora_31. Build: manual_1.10. OK
-OS: freebsd_12.2. Build: pkg_2.4. SKIP
-OS: freebsd_12.2. Build: ports_2.4. SKIP
-OS: amazon-linux_1. Build: script_2.5. ERROR
-OS: amazon-linux_2. Build: script_2.5. ERROR
-OS: docker_2.4. Build: 2.4. OK
+OS: freebsd_12.2. Build: pkg_2.4. Elapsed time: 95.85. OK
+OS: freebsd_12.2. Build: ports_2.4. Elapsed time: 355.99. TIMEOUT
+OS: amazon-linux_2. Build: script_2.5. Elapsed time: 5.43. ERROR
+OS: amazon-linux_2. Build: script_1.10. Elapsed time: 5.83. ERROR
+OS: os-x_10.12. Build: 2.5. SKIP
+OS: os-x_10.12. Build: 2.6. Elapsed time: 521.86. OK
+OS: docker-hub_2.5. Build: 2.5. Elapsed time: 122.72. OK
 ```

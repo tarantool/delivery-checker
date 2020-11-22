@@ -10,7 +10,7 @@ from docker.utils.json_stream import json_stream
 
 DockerInfo = namedtuple(
     typename='DockerInfo',
-    field_names=('os_name', 'build_name', 'image', 'image_version', 'skip'),
+    field_names=('os_name', 'build_name', 'image', 'image_version', 'skip', 'no_cache'),
 )
 
 
@@ -34,14 +34,18 @@ class DockerBuilder:
                 image=params.get('image', os_name),
                 image_version=version,
                 skip=build_name in params.get('skip', []),
+                no_cache=params.get('no_cache', False),
             ),
             params.get('versions', ['latest']),
         ))
 
     @staticmethod
-    def get_docker_builds(os_name, build_name, commands):
-        builds = []
+    def get_docker_builds(config, os_name, build_name, commands):
+        params = config.get(os_name)
+        if params is None:
+            return []
 
+        builds = []
         for command in commands:
             match = re.search(r'docker (pull|run) ([\w/]+)(:([\w.]+))?', command, flags=re.I)
             if match:
@@ -50,7 +54,8 @@ class DockerBuilder:
                     build_name=build_name,
                     image=match.group(2),
                     image_version=match.group(4) or 'latest',
-                    skip=False,
+                    skip=build_name in params.get('skip', []),
+                    no_cache=params.get('no_cache', False),
                 ))
                 break
 
@@ -114,6 +119,7 @@ class DockerBuilder:
                 },
                 timeout=timeout,
                 rm=True,
+                nocache=False,
             )
             return True
 
@@ -181,6 +187,5 @@ class DockerBuilder:
             is_success = False
         if is_success and not self.run(container_name):
             is_success = False
-        if not self.rm(container_name):
-            is_success = False
+        self.rm(container_name)
         return is_success

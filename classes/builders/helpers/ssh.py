@@ -25,19 +25,6 @@ class SshClient:
         if self.__ssh is not None:
             self.__ssh.close()
 
-    def wait_until(self, func, excepted=None, timeout=30, period=1, error_msg='Impossible to wait', *args, **kwargs):
-        end = time.time() + timeout
-        while time.time() < end:
-            try:
-                if func(*args, **kwargs) == excepted:
-                    return True
-            except Exception as e:
-                self.log(f'{error_msg}: {e}')
-            time.sleep(period)
-
-        self.log(f'{error_msg}: timeout')
-        return False
-
     def __connect(self, timeout=60, reconnect=False):
         if self.__ssh is not None:
             if not reconnect:
@@ -58,6 +45,19 @@ class SshClient:
         )
         self.__ssh = ssh
 
+    def wait_until(self, func, excepted=None, timeout=30, period=1, error_msg='Impossible to wait', *args, **kwargs):
+        end = time.time() + timeout
+        while time.time() < end:
+            try:
+                if func(*args, **kwargs) == excepted:
+                    return True
+            except Exception as e:
+                self.log(f'{error_msg}: {e}')
+            time.sleep(period)
+
+        self.log(f'{error_msg}: timeout')
+        return False
+
     def wait_ssh(self, timeout=60 * 10):
         old_level = logging.getLogger().level
         logging.getLogger().setLevel(logging.CRITICAL)
@@ -74,8 +74,7 @@ class SshClient:
         return connected
 
     def exec_ssh_command(self, command, timeout=60, input_data=None):
-        if self.__ssh is None:
-            self.__connect()
+        self.__connect()
 
         with self.__ssh.get_transport().open_session() as channel:
             channel.get_pty()
@@ -116,6 +115,8 @@ class SshClient:
                 raise Exception(f'Impossible to execute SSH command "{command}":\n{error}')
 
     def get_sftp(self):
+        self.__connect()
+
         if self.__sftp is not None:
             return self.__sftp
 
