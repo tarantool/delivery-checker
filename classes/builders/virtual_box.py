@@ -43,21 +43,18 @@ class VirtualBoxBuilder:
             params.items(),
         ))
 
-    def rm(self, timeout=60):
+    def restore(self, timeout=60):
         try:
             vm_name = self.build_info.vm_name
             self.__shell_client.exec_commands(
                 commands=[
                     f'VBoxManage controlvm {vm_name} poweroff',
-                    'sleep 3',  # Wait for poweroff
-                    f'VBoxManage unregistervm {vm_name} --delete',
-                    f'VBoxManage closemedium $HOME/VMs/{vm_name}/{vm_name}.vdi',
-                    f'rm -rf $HOME/VMs/{vm_name}',
+                    'sleep 3',  # Wait for full poweroff
+                    f'VBoxManage snapshot {vm_name} restorecurrent',
                 ],
                 good_errors=[
                     'not currently running',
-                    'Could not find a registered machine',
-                    'Could not find file',
+                    'does not have any snapshots',
                 ],
                 timeout=timeout,
             )
@@ -72,8 +69,8 @@ class VirtualBoxBuilder:
             vm_name = self.build_info.vm_name
             self.__shell_client.exec_commands(
                 commands=[
-                    f'vboxmanage clonevm {vm_name}_base --name {vm_name} --mode all --register',
-                    f'vboxmanage startvm --type headless {vm_name}',
+                    f'VBoxManage snapshot {vm_name} showvminfo base || VBoxManage snapshot {vm_name} take base',
+                    f'VBoxManage startvm --type headless {vm_name}',
                 ],
                 timeout=timeout,
             )
@@ -131,11 +128,11 @@ class VirtualBoxBuilder:
 
     def deploy(self):
         is_success = True
-        if not self.rm():
+        if not self.restore():
             is_success = False
         if is_success and not self.start():
             is_success = False
         if is_success and not self.run():
             is_success = False
-        self.rm()
+        self.restore()
         return is_success
