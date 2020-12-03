@@ -1,0 +1,52 @@
+name: Deployment
+on:
+  workflow_dispatch:
+  push:
+    branches: [ 'master' ]
+jobs:
+  deployment:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@master
+      - name: Clear old files
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ secrets.REMOTE_PATH }}
+            find . -maxdepth 1 \
+              -not -name 'config.json' \
+              -not -name '.' \
+              -not -name 'archive' \
+              -print0 | sudo xargs -0 rm -rfv --
+      - name: Send new files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "*,!.*"
+          target: "${{ secrets.REMOTE_PATH }}/"
+      - name: Install dependences
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ secrets.REMOTE_PATH }}
+            python3 -m venv venv
+            source venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+      - name: Check config
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ secrets.REMOTE_PATH }}
+            ls config.json || cp config-example.json config.json

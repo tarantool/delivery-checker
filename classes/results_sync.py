@@ -7,8 +7,8 @@ import zipfile
 from collections import namedtuple
 from enum import Enum
 
-from classes.builders.helpers.ssh import SshClient, Credentials
-from classes.builders.helpers.zip import Zip
+from classes.helpers.ssh import SshClient, Credentials
+from classes.helpers.zip import Zip
 
 RemoteInfo = namedtuple(
     typename='RemoteInfo',

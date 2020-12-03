@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from paramiko import SSHClient, AutoAddPolicy
 
-from classes.builders.helpers.common import wait_until, print_logs
+from classes.helpers.common import wait_until, print_logs
 
 Credentials = namedtuple(
     typename='Credentials',

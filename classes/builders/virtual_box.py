@@ -3,9 +3,9 @@ from collections import namedtuple
 from paramiko import SFTPClient
 from paramiko.common import o777
 
-from classes.builders.helpers.common import wait_until
-from classes.builders.helpers.shell import ShellClient
-from classes.builders.helpers.ssh import Credentials, SshClient
+from classes.helpers.common import wait_until
+from classes.helpers.shell import ShellClient
+from classes.helpers.ssh import Credentials, SshClient
 
 VirtualBoxInfo = namedtuple(
     typename='VirtualBoxInfo',

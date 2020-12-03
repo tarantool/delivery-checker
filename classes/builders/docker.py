@@ -8,7 +8,7 @@ from docker import from_env as docker_from_env
 from docker.errors import APIError
 from docker.utils.json_stream import json_stream
 
-from classes.builders.helpers.common import print_logs
+from classes.helpers.common import print_logs
 
 DockerInfo = namedtuple(
     typename='DockerInfo',
