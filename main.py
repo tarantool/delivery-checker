@@ -7,6 +7,7 @@ def main():
     tester = Tester()
     tester.test_builds()
     tester.sync_results()
+    tester.archive_results()
     return tester.is_results_ok()
 
 

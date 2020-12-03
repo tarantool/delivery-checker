@@ -16,11 +16,9 @@ and tries to run them on different OS.
 {
   "commands_url": "https://www.tarantool.io/api/tarantool/info/versions/",
   "send_to_remote": {
-    "credentials": {
-      "login": "centos",
-      "password": "centos",
-      "host": "123.456.789.012"
-    },
+    "login": "centos",
+    "password": "centos",
+    "host": "123.456.789.012",
     "archive": "server_name",
     "remote_dir": "/opt/delivery_checker/remote"
   },
@@ -41,13 +39,13 @@ and tries to run them on different OS.
       },
       "virtual_box": {
         "Name of VirtualBox VM": {
-          "credentials": {
-            "login": "root",
-            "password": "toor",
-            "host": "127.0.0.1",
-            "port": 22
-          },
+          "login": "root",
+          "password": "toor",
+          "host": "127.0.0.1",
+          "port": 22,
           "remote_dir": "/opt/tarantool",
+          "skip_prepare": false,
+          "prepare_timeout": 360,
           "run_timeout": 60,
           "skip": [
             "name_of_build_1",
@@ -69,8 +67,8 @@ because there are some errors.
 ```
 OS: freebsd_12.2. Build: pkg_2.4. Elapsed time: 95.85. OK
 OS: freebsd_12.2. Build: ports_2.4. Elapsed time: 355.99. TIMEOUT
-OS: amazon-linux_2. Build: script_2.5. Elapsed time: 5.43. ERROR
-OS: amazon-linux_2. Build: script_1.10. Elapsed time: 5.83. ERROR
+OS: amazon-linux_2. Build: script_2.5. Elapsed time: 85.43. ERROR
+OS: amazon-linux_2. Build: script_1.10. Elapsed time: 88.83. ERROR
 OS: os-x_10.12. Build: 2.5. SKIP
 OS: os-x_10.12. Build: 2.6. Elapsed time: 521.86. OK
 OS: docker-hub_2.5. Build: 2.5. Elapsed time: 122.72. OK

@@ -8,6 +8,8 @@ from docker import from_env as docker_from_env
 from docker.errors import APIError
 from docker.utils.json_stream import json_stream
 
+from classes.builders.helpers.common import print_logs
+
 DockerInfo = namedtuple(
     typename='DockerInfo',
     field_names=('os_name', 'build_name', 'image', 'image_version', 'skip', 'no_cache'),
@@ -20,6 +22,7 @@ class DockerBuilder:
         self.build_info = build_info
         self.__client = docker_from_env()
         self.__build_log = []
+        self.__image_id = None
 
     @staticmethod
     def get_builds(config, os_name='docker', build_name='latest'):
@@ -34,7 +37,7 @@ class DockerBuilder:
                 image=params.get('image', os_name),
                 image_version=version,
                 skip=build_name in params.get('skip', []),
-                no_cache=params.get('no_cache', False),
+                no_cache=params.get('no_cache', True),
             ),
             params.get('versions', ['latest']),
         ))
@@ -47,7 +50,7 @@ class DockerBuilder:
 
         builds = []
         for command in commands:
-            match = re.search(r'docker (pull|run) ([\w/]+)(:([\w.]+))?', command, flags=re.I)
+            match = re.search(r'docker (pull|run).* ([\w/]+)(:([\w.]+))?', command, flags=re.I)
             if match:
                 builds.append(DockerInfo(
                     os_name=os_name,
@@ -55,7 +58,7 @@ class DockerBuilder:
                     image=match.group(2),
                     image_version=match.group(4) or 'latest',
                     skip=build_name in params.get('skip', []),
-                    no_cache=params.get('no_cache', False),
+                    no_cache=params.get('no_cache', True),
                 ))
                 break
 
@@ -63,25 +66,27 @@ class DockerBuilder:
 
     def rm(self, container_name):
         try:
-            exists_containers = self.__client.containers.list(all=True)
-            for container in exists_containers:
-                if container.name == container_name:
-                    container.remove(force=True)
-                    break
-            return True
+            try:
+                exists_containers = self.__client.containers.list(all=True)
+                for container in exists_containers:
+                    if container.name == container_name:
+                        container.remove(force=True)
+                        break
 
-        except APIError as e:
-            if e.status_code == 404:
-                return True
-            elif e.explanation:
-                self.log(e.explanation)
-            else:
-                self.log(e)
+            except APIError as e:
+                if e.status_code == 404:
+                    pass
+                elif e.explanation:
+                    raise Exception(e.explanation)
+                else:
+                    raise Exception(e)
 
         except Exception as e:
             self.log(f'Impossible to remove container: {e}')
+            return False
 
-        return False
+        self.log(f'Container {container_name} removed.')
+        return True
 
     # Copy of self.__client.images.build() to get build logs on timeout
     def __build_image(self, **kwargs):
@@ -106,9 +111,26 @@ class DockerBuilder:
             return image_id
         raise Exception('No image id in logs!')
 
+    def __get_build_logs(self):
+        logs_string = ''
+        for msg in self.__build_log:
+            if 'stream' in msg:
+                logs_string += msg['stream']
+            elif 'error' in msg:
+                logs_string += msg['error']
+            elif 'message' in msg:
+                logs_string += msg['message']
+            elif 'status' in msg:
+                continue
+            else:
+                logs_string += json.dumps(msg) + '\n'
+        return logs_string
+
     def build(self, container_name, timeout=60 * 15):
+        result = False
+
         try:
-            self.__build_image(
+            self.__image_id = self.__build_image(
                 path='.',
                 tag=container_name,
                 buildargs={
@@ -116,38 +138,28 @@ class DockerBuilder:
                     'VERSION': self.build_info.image_version,
                     'OS_NAME': self.build_info.os_name,
                     'BUILD_NAME': self.build_info.build_name,
+                    'TNT_VERSION': self.build_info.build_name.split("_")[-1],
                 },
                 timeout=timeout,
+                nocache=self.build_info.no_cache,
                 rm=True,
-                nocache=False,
             )
-            return True
+            result = True
 
         except Exception as e:
             if 'Read timed out' in str(e):
                 self.log('Timeout of building container!')
             else:
                 self.log(f'Impossible to build container: {e}!')
-            self.log('Docker build logs:')
-            logs_string = ''
-            for msg in self.__build_log:
-                if 'stream' in msg:
-                    logs_string += msg['stream']
-                elif 'error' in msg:
-                    logs_string += msg['error']
-                elif 'message' in msg:
-                    logs_string += msg['message']
-                elif 'status' in msg:
-                    continue
-                else:
-                    logs_string += json.dumps(msg) + '\n'
-            for line in logs_string.splitlines():
-                if line:
-                    self.log(line)
 
-        return False
+        self.log('Docker build logs:')
+        print_logs(out_data=self.__get_build_logs(), log=self.log, out_prefix='')
+
+        return result
 
     def run(self, container_name, timeout=60):
+        result = False
+
         try:
             container = self.__client.containers.run(
                 image=container_name,
@@ -166,18 +178,17 @@ class DockerBuilder:
                     res = {'Error': e, 'StatusCode': 1}
 
             if res['StatusCode'] == 0:
-                return True
+                result = True
+            else:
+                self.log(f'Error code: {res["StatusCode"]}, Error message: {res["Error"]}')
 
-            self.log(f'Error code: {res["StatusCode"]}, Error message: {res["Error"]}')
             self.log('Runtime logs:')
-            for line in container.logs().decode().splitlines():
-                if line:
-                    self.log(line)
+            print_logs(out_data=container.logs().decode(), log=self.log, out_prefix='')
 
         except Exception as e:
             self.log(f'Impossible to run container: {e}')
 
-        return False
+        return result
 
     def deploy(self, container_name='tnt_builder'):
         is_success = True

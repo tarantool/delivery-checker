@@ -4,18 +4,6 @@ local log = require('log')
 local fio = require('fio')
 local json = require('json')
 
-local function box_cfg()
-    fio.mktree('data/memtx')
-    fio.mktree('data/vinyl')
-    fio.mktree('data/wal')
-    box.cfg({
-        listen = 3301,
-        memtx_dir = 'data/memtx',
-        vinyl_dir = 'data/vinyl',
-        wal_dir = 'data/wal',
-    })
-end
-
 local function test(func)
     local _, err = pcall(func)
     if err ~= nil then
@@ -35,7 +23,26 @@ local function write_results(results)
     res_fh:close()
 end
 
+local function box_cfg()
+    fio.mktree('data/memtx')
+    fio.mktree('data/vinyl')
+    fio.mktree('data/wal')
+    box.cfg({
+        listen = 3301,
+        memtx_dir = 'data/memtx',
+        vinyl_dir = 'data/vinyl',
+        wal_dir = 'data/wal',
+    })
+end
+
+local function tnt_version()
+    local expected_version = os.getenv('TNT_VERSION')
+    local begin = string.find(_TARANTOOL, expected_version, 1, true)
+    assert(begin == 1, 'Expected version: ' .. expected_version .. ', got: ' .. _TARANTOOL)
+end
+
 local results = {}
+results['tnt_version'] = test(tnt_version)
 results['box_cfg'] = test(box_cfg)
 write_results(results)
 

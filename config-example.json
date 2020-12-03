@@ -12,7 +12,8 @@
       "docker": {
         "image": "centos",
         "versions": [
-          "7"
+          "7",
+          "8"
         ]
       }
     },
@@ -32,22 +33,28 @@
     "freebsd": {
       "virtual_box": {
         "freebsd_12.2": {
-          "credentials": {
-            "port": 10023
-          }
+          "port": 10023,
+          "skip_prepare": true
         }
       }
     },
     "os-x": {
       "virtual_box": {
         "os-x_10.12": {
-          "credentials": {
-            "login": "osx",
-            "password": "osx",
-            "port": 10024
-          },
+          "login": "osx",
+          "password": "osx",
+          "port": 10024,
           "remote_dir": "/Users/osx/tarantool",
-          "run_timeout": 600
+          "prepare_timeout": 5400,
+          "run_timeout": 1800
+        },
+        "os-x_10.13": {
+          "login": "osx",
+          "password": "osx",
+          "port": 10025,
+          "remote_dir": "/Users/osx/tarantool",
+          "prepare_timeout": 5400,
+          "run_timeout": 1800
         }
       }
     },

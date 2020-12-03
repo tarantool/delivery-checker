@@ -4,6 +4,7 @@ install/*.sh
 !install/default.sh
 local/
 remote/
+archive/
 config*.json
 !config-example.json
 

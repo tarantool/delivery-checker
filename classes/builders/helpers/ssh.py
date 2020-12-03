@@ -1,10 +1,10 @@
 import logging
 import os
-import time
-import zipfile
 from collections import namedtuple
 
 from paramiko import SSHClient, AutoAddPolicy
+
+from classes.builders.helpers.common import wait_until, print_logs
 
 Credentials = namedtuple(
     typename='Credentials',
@@ -45,33 +45,49 @@ class SshClient:
         )
         self.__ssh = ssh
 
-    def wait_until(self, func, excepted=None, timeout=30, period=1, error_msg='Impossible to wait', *args, **kwargs):
-        end = time.time() + timeout
-        while time.time() < end:
-            try:
-                if func(*args, **kwargs) == excepted:
-                    return True
-            except Exception as e:
-                self.log(f'{error_msg}: {e}')
-            time.sleep(period)
-
-        self.log(f'{error_msg}: timeout')
-        return False
-
-    def wait_ssh(self, timeout=60 * 10):
+    def wait_ssh(self, timeout=60 * 10, reconnect=False):
         old_level = logging.getLogger().level
         logging.getLogger().setLevel(logging.CRITICAL)
 
-        connected = self.wait_until(
-            lambda: self.__connect(timeout=timeout),
+        connected = wait_until(
+            lambda: self.__connect(timeout=timeout, reconnect=reconnect),
             timeout=timeout,
             period=5,
             error_msg='Impossible to connect to virtual machine',
+            log=self.log,
         )
 
         logging.getLogger().setLevel(old_level)
 
         return connected
+
+    def __wait_exit_code(self, channel, timeout=60):
+        if wait_until(
+            channel.exit_status_ready,
+            excepted=True,
+            timeout=timeout,
+            error_msg='Impossible to check availability to get exit status',
+            log=self.log,
+        ):
+            return channel.recv_exit_status()
+        return 1
+
+    def __get_channel_output(self, channel):
+        channel.settimeout(1)
+
+        stdout = ''
+        try:
+            stdout = channel.recv(1024 ** 3).decode()
+        except Exception as e:
+            self.log(f'Impossible to get stderr: "{e}"')
+
+        stderr = ''
+        try:
+            stderr = channel.recv_stderr(1024 ** 3).decode()
+        except Exception as e:
+            self.log(f'Impossible to get stderr: "{e}"')
+
+        return f'{stdout}\n{stderr}'
 
     def exec_ssh_command(self, command, timeout=60, input_data=None):
         self.__connect()
@@ -80,39 +96,33 @@ class SshClient:
             channel.get_pty()
             channel.settimeout(timeout)
 
+            print_logs(in_data=command, log=self.log)
             channel.exec_command(command)
             if input_data is not None:
                 channel.send(input_data)
 
-            if self.wait_until(
-                channel.exit_status_ready,
-                excepted=True,
-                timeout=timeout,
-                error_msg='Impossible to check availability to get exit status',
-            ):
-                if channel.recv_exit_status() == 0:
-                    return None
+            exit_code = self.__wait_exit_code(channel, timeout)
+            output = self.__get_channel_output(channel)
+            print_logs(out_data=f'Logs:\n{output}\nExit code: {exit_code}', log=self.log)
+            if exit_code != 0:
+                return output
 
-            stdout = ''
-            stderr = ''
-            channel.settimeout(0)
+    def exec_ssh_commands(self, commands, timeout=60, good_errors=None):
+        good_errors = good_errors or []
 
-            try:
-                stdout = channel.recv(1024 ** 3).decode()
-            except Exception as e:
-                self.log(f'Impossible to get stdout: "{e}"')
-            try:
-                stderr = channel.recv_stderr(1024 ** 3).decode()
-            except Exception as e:
-                self.log(f'Impossible to get stderr: "{e}"')
-
-            return f'{stdout}\n{stderr}'
-
-    def exec_ssh_commands(self, commands, timeout=60):
         for command in commands:
-            error = self.exec_ssh_command(command, timeout)
-            if error:
-                raise Exception(f'Impossible to execute SSH command "{command}":\n{error}')
+            output = self.exec_ssh_command(command, timeout)
+            if output is not None:
+                output_lower = output.lower()
+
+                is_good = False
+                for good_error in good_errors:
+                    if good_error.lower() in output_lower:
+                        is_good = True
+                        break
+
+                if not is_good:
+                    return output
 
     def get_sftp(self):
         self.__connect()
@@ -123,29 +133,8 @@ class SshClient:
         self.__sftp = self.__ssh.open_sftp()
         return self.__sftp
 
-    @staticmethod
-    def __zip_one(fp, path, rel_dir='.'):
-        rel_path = os.path.relpath(path, rel_dir)
-        if rel_path != '.':
-            fp.write(path, rel_path)
-
-    def __zip_all(self, fp, path, rel_dir='.'):
-        if os.path.isdir(path):
-            for root, sub_dirs, files in os.walk(path):
-                for sub_dir in sub_dirs:
-                    self.__zip_one(fp, os.path.join(root, sub_dir), rel_dir)
-                for file in files:
-                    self.__zip_one(fp, os.path.join(root, file), rel_dir)
-        else:
-            self.__zip_one(fp, path, rel_dir)
-
-    def send_files_as_zip(self, paths, rel_dir='.', zip_name='output.zip', remote_dir='.', timeout=60 * 5):
+    def send_file(self, zip_name='output.zip', remote_dir='.', timeout=60 * 5):
         try:
-            fp = zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED)
-            for path in paths:
-                self.__zip_all(fp, path, rel_dir)
-            fp.close()
-
             self.exec_ssh_command(f'mkdir -p {remote_dir}', timeout=timeout)
             self.get_sftp().put(zip_name, f'{remote_dir}/{zip_name}')
         finally:

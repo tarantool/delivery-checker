@@ -1,12 +1,14 @@
 import subprocess
 
+from classes.builders.helpers.common import print_logs
+
 
 class ShellClient:
     def __init__(self, log_func=print):
         self.log = log_func
 
-    @staticmethod
-    def exec_command(command, timeout=60, input_data=None):
+    def exec_command(self, command, timeout=60, input_data=None):
+        print_logs(in_data=command, log=self.log)
         process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -14,12 +16,13 @@ class ShellClient:
             shell=True,
         )
 
-        output, error = process.communicate(input=input_data, timeout=timeout)
-        output = output.decode()
-        error = error.decode()
+        stdout, stderr = process.communicate(input=input_data, timeout=timeout)
+        stdout = stdout.decode()
+        stderr = stderr.decode()
+        print_logs(out_data=f'{stdout}\n{stderr}\nExit code: {process.returncode}', log=self.log)
 
         if process.returncode != 0:
-            return output + error
+            return f'{stdout}\n{stderr}'
 
         return None
 
@@ -27,13 +30,15 @@ class ShellClient:
         good_errors = good_errors or []
 
         for command in commands:
-            error = self.exec_command(command, timeout)
-            if error:
+            output = self.exec_command(command, timeout)
+            if output is not None:
+                output_lower = output.lower()
+
                 is_good = False
                 for good_error in good_errors:
-                    if good_error in error:
+                    if good_error.lower() in output_lower:
                         is_good = True
                         break
 
                 if not is_good:
-                    raise Exception(f'Impossible to execute command "{command}":\n{error}')
+                    return output

@@ -1,3 +1,4 @@
+import datetime
 import glob
 import json
 import os
@@ -7,6 +8,7 @@ from collections import namedtuple
 from enum import Enum
 
 from classes.builders.helpers.ssh import SshClient, Credentials
+from classes.builders.helpers.zip import Zip
 
 RemoteInfo = namedtuple(
     typename='RemoteInfo',
@@ -32,27 +34,34 @@ RESULTS_PRIORITY = {
     Result.OK: 6,
 }
 
+OK_RESULTS = [
+    Result.NO_TEST,
+    Result.SKIP,
+    Result.OK,
+]
 
-class ResultsSync:
+
+class ResultsManager:
     def __init__(self, config, log_func=print):
         self.__parse_config(config)
 
         self.log = log_func
 
+        self.__zip = Zip()
+
     def __parse_config(self, config):
         self.__local_dir = './local'
         self.__remote_dir = './remote'
+        self.__archive_dir = './archive'
         self.__results_file = f'{self.__local_dir}/results.json'
 
         self.__send_to_remote = None
         if config.get('send_to_remote') is not None:
-            credentials = config['send_to_remote'].get('credentials')
-            assert credentials is not None, 'Credentials is required in send_to_remote section'
-            login = credentials.get('login')
+            login = config['send_to_remote'].get('login')
             assert login is not None, 'Login is required in send_to_remote section'
-            password = credentials.get('password')
+            password = config['send_to_remote'].get('password')
             assert password is not None, 'Password is required in send_to_remote section'
-            host = credentials.get('host')
+            host = config['send_to_remote'].get('host')
             assert host is not None, 'Host is required in send_to_remote section'
 
             archive = config['send_to_remote'].get('archive')
@@ -63,7 +72,7 @@ class ResultsSync:
                     login=login,
                     password=password,
                     host=host,
-                    port=credentials.get('port', 22),
+                    port=config['send_to_remote'].get('port', 22),
                 ),
                 archive=archive,
                 remote_dir=config['send_to_remote'].get('remote_dir', '/opt/delivery_checker/remote')
@@ -75,12 +84,18 @@ class ResultsSync:
         if self.__send_to_remote is None:
             return True
 
+        zip_name = f'{self.__send_to_remote.archive}.zip'
+
         try:
-            ssh = SshClient(self.__send_to_remote.credentials, log_func=self.log)
-            ssh.send_files_as_zip(
-                paths=[self.__local_dir],
+            self.__zip.zip_path(
+                path=self.__local_dir,
                 rel_dir=self.__local_dir,
-                zip_name=f'{self.__send_to_remote.archive}.zip',
+                zip_name=zip_name,
+            )
+
+            ssh = SshClient(self.__send_to_remote.credentials, log_func=self.log)
+            ssh.send_file(
+                zip_name=zip_name,
                 remote_dir=f'{self.__send_to_remote.remote_dir}',
                 timeout=timeout,
             )
@@ -88,6 +103,9 @@ class ResultsSync:
 
         except Exception as e:
             print(f'Impossible to send results to remote server:\n{e}')
+
+        finally:
+            os.remove(zip_name)
 
         return False
 
@@ -153,3 +171,24 @@ class ResultsSync:
         self.send_results()
         self.use_remote_results()
         self.find_lost_results(all_builds)
+
+    def archive_results(self):
+        os.makedirs(self.__archive_dir, exist_ok=True)
+        zip_name = f'results_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
+        zip_name = os.path.join(self.__archive_dir, zip_name)
+        self.__zip.zip_path(
+            path=self.__local_dir,
+            rel_dir=self.__local_dir,
+            zip_name=zip_name,
+        )
+
+    def is_results_ok(self):
+        with open(self.__results_file, mode='r') as fs:
+            results = json.load(fs)
+        return all(map(
+            lambda builds: all(map(
+                lambda build_res: build_res in OK_RESULTS,
+                builds.values(),
+            )),
+            results.values(),
+        ))
