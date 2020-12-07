@@ -102,7 +102,7 @@ class ResultsManager:
             return True
 
         except Exception as e:
-            print(f'Impossible to send results to remote server:\n{e}')
+            self.log(f'Impossible to send results to remote server:\n{e}')
 
         finally:
             os.remove(zip_name)

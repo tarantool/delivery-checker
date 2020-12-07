@@ -11,7 +11,9 @@ from classes.results_sync import ResultsManager, Result
 
 
 class Tester:
-    def __init__(self, config_path='./config.json'):
+    def __init__(self, config_path='./config.json', console_mode=False, debug_mode=False):
+        self.__console_mode = console_mode
+        self.__debug_mode = debug_mode
         with open(config_path, 'r') as fs:
             config = json.load(fs)
             self.__parse_config(config)
@@ -20,7 +22,7 @@ class Tester:
         self.__builds = None
         self.__all_builds = []
 
-        self.__results_manager = ResultsManager(config, log_func=self.__log)
+        self.__results_manager = ResultsManager(config)
 
     def __parse_config(self, config):
         self.commands_url = config.get('commands_url', 'https://www.tarantool.io/api/tarantool/info/versions/')
@@ -48,7 +50,7 @@ class Tester:
     def __log(self, msg):
         self.__logs.append(msg)
 
-    def __download_scripts(self, debug=False):
+    def __download_scripts(self):
         site_commands = requests.get(self.commands_url).json()
 
         with open(os.path.join(self.__install_dir, 'default.sh'), mode='r') as fs:
@@ -75,7 +77,7 @@ class Tester:
                     builds += DockerBuilder.get_docker_builds(self.__docker_params, os_name, build_name, commands)
                     commands = []
 
-                if len(builds) == builds_count and debug:
+                if len(builds) == builds_count and self.__debug_mode:
                     print(f'OS: {os_name}. Build: {build_name}. {Result.NO_TEST.value}')
 
                 path = os.path.join(self.__install_dir, f'{os_name}_{build_name}.sh')
@@ -105,7 +107,11 @@ class Tester:
                 os_name = build.os_name
 
             log_prefix = f'OS: {os_name}. Build: {build.build_name}.'
-            print(f'\r{log_prefix} Running...', end='')
+            if self.__console_mode:
+                print(f'\r{log_prefix} Running...', end='')
+            else:
+                print(f'{log_prefix} ', end='')
+
             self.__results[os_name] = self.__results.get(os_name, {})
             start = time.time()
 
@@ -152,7 +158,10 @@ class Tester:
                 if not is_results_ok:
                     result = Result.FAIL
 
-            print(f'\r{log_prefix} Elapsed time: {time.time() - start:.2f}. {result.value}')
+            if self.__console_mode:
+                print(f'\r{log_prefix} ')
+            print(f'Elapsed time: {time.time() - start:.2f}. {result.value}')
+
             self.__results[os_name][build.build_name] = result
 
         with open(self.__results_file, mode='w') as fs:

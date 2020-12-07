@@ -4,11 +4,11 @@ import os
 import re
 from collections import namedtuple
 
-from docker import from_env as docker_from_env
 from docker.errors import APIError
 from docker.utils.json_stream import json_stream
 
 from classes.helpers.common import print_logs
+from docker import from_env as docker_from_env
 
 DockerInfo = namedtuple(
     typename='DockerInfo',
@@ -72,6 +72,9 @@ class DockerBuilder:
                     if container.name == container_name:
                         container.remove(force=True)
                         break
+
+                self.__client.containers.prune()
+                self.__client.images.prune(filters={'dangling': True})
 
             except APIError as e:
                 if e.status_code == 404:
