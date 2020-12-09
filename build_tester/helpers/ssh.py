@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from paramiko import SSHClient, AutoAddPolicy
 
-from classes.helpers.common import wait_until, print_logs
+from build_tester.helpers.common import wait_until, print_logs
 
 Credentials = namedtuple(
     typename='Credentials',
@@ -136,6 +136,6 @@ class SshClient:
     def send_file(self, zip_name='output.zip', remote_dir='.', timeout=60 * 5):
         try:
             self.exec_ssh_command(f'mkdir -p {remote_dir}', timeout=timeout)
-            self.get_sftp().put(zip_name, f'{remote_dir}/{zip_name}')
+            self.get_sftp().put(zip_name, os.path.join(remote_dir, zip_name))
         finally:
             os.remove(zip_name)

@@ -1,11 +1,12 @@
+import os
 from collections import namedtuple
 
 from paramiko import SFTPClient
 from paramiko.common import o777
 
-from classes.helpers.common import wait_until
-from classes.helpers.shell import ShellClient
-from classes.helpers.ssh import Credentials, SshClient
+from build_tester.helpers.common import wait_until
+from build_tester.helpers.shell import ShellClient
+from build_tester.helpers.ssh import Credentials, SshClient
 
 VirtualBoxInfo = namedtuple(
     typename='VirtualBoxInfo',
@@ -17,9 +18,21 @@ VirtualBoxInfo = namedtuple(
 
 
 class VirtualBoxBuilder:
-    def __init__(self, build_info: VirtualBoxInfo, log_func=print):
-        self.log = log_func
+    def __init__(
+        self, build_info: VirtualBoxInfo,
+        scripts_dir_path='.',
+        prepare_dir_path='./prepare',
+        install_dir_path='./install',
+        tests_dir_path='./tests',
+        log_func=print
+    ):
         self.build_info = build_info
+        self.scripts_dir_path = scripts_dir_path
+        self.prepare_dir_path = prepare_dir_path
+        self.install_dir_path = install_dir_path
+        self.tests_dir_path = tests_dir_path
+        self.log = log_func
+
         self.__shell_client = ShellClient(log_func=log_func)
         self.__ssh_client = SshClient(self.build_info.credentials, log_func=self.log)
 
@@ -115,11 +128,11 @@ class VirtualBoxBuilder:
 
             sftp: SFTPClient = self.__ssh_client.get_sftp()
             sftp.chdir(remote_dir)
-            sftp.put(f'prepare/{self.build_info.os_name}.sh', 'prepare.sh')
+            sftp.put(os.path.join(self.prepare_dir_path, f'{self.build_info.os_name}.sh'), 'prepare.sh')
             sftp.chmod('prepare.sh', o777)
 
             if self.__ssh_client.exec_ssh_commands(
-                commands=[f'{remote_dir}/prepare.sh'],
+                commands=[os.path.join(remote_dir, 'prepare.sh')],
                 good_errors=['shutdown'],
                 timeout=timeout,
             ) is not None:
@@ -156,26 +169,29 @@ class VirtualBoxBuilder:
 
         try:
             remote_dir = self.build_info.remote_dir
-            results_dir = f'{remote_dir}/results'
+            remote_results_dir = os.path.join(remote_dir, 'results')
             results_file = f'{self.build_info.vm_name}_{self.build_info.build_name}.json'
 
             if self.__ssh_client.exec_ssh_commands(
-                commands=[f'mkdir -p {results_dir}'],
+                commands=[f'mkdir -p {remote_results_dir}'],
                 timeout=timeout,
             ) is not None:
                 return False
 
             sftp: SFTPClient = self.__ssh_client.get_sftp()
             sftp.chdir(remote_dir)
-            sftp.put(f'install/{self.build_info.os_name}_{self.build_info.build_name}.sh', 'install.sh')
+            sftp.put(
+                os.path.join(self.install_dir_path, f'{self.build_info.os_name}_{self.build_info.build_name}.sh'),
+                'install.sh',
+            )
             sftp.chmod('install.sh', o777)
-            sftp.put('init.lua', f'init.lua')
+            sftp.put(os.path.join(self.scripts_dir_path, 'init.lua'), f'init.lua')
 
             if self.__ssh_client.exec_ssh_commands(
                 commands=[
-                    f'{remote_dir}/install.sh',
+                    os.path.join(remote_dir, 'install.sh'),
                     f'cd {remote_dir} && '
-                    f'export RESULTS_FILE="{results_dir}/{results_file}" && '
+                    f'export RESULTS_FILE="{os.path.join(remote_results_dir, results_file)}" && '
                     f'export TNT_VERSION="{self.build_info.build_name.split("_")[-1]}" && '
                     f'tarantool init.lua',
                 ],
@@ -183,7 +199,10 @@ class VirtualBoxBuilder:
             ) is not None:
                 return False
 
-            sftp.get(f'{results_dir}/{results_file}', f'./local/results/{results_file}')
+            sftp.get(
+                os.path.join(remote_results_dir, results_file),
+                os.path.join(self.tests_dir_path, results_file),
+            )
 
             return True
 

@@ -45,16 +45,16 @@
           "password": "osx",
           "port": 10024,
           "remote_dir": "/Users/osx/tarantool",
-          "prepare_timeout": 5400,
-          "run_timeout": 1800
+          "prepare_timeout": 2700,
+          "run_timeout": 900
         },
         "os-x_10.13": {
           "login": "osx",
           "password": "osx",
           "port": 10025,
           "remote_dir": "/Users/osx/tarantool",
-          "prepare_timeout": 5400,
-          "run_timeout": 1800
+          "prepare_timeout": 2700,
+          "run_timeout": 900
         }
       }
     },

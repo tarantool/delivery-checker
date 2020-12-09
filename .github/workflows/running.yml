@@ -16,7 +16,7 @@ jobs:
           script: |
             cd ${{ secrets.REMOTE_PATH }}
             source venv/bin/activate
-            python3 main.py
+            python3 check.py
             export EXIT_CODE=$?
             sudo chown -R ${{ secrets.USERNAME }}:${{ secrets.USERNAME }} local
             exit $EXIT_CODE

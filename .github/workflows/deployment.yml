@@ -17,8 +17,9 @@ jobs:
           script: |
             cd ${{ secrets.REMOTE_PATH }}
             find . -maxdepth 1 \
-              -not -name 'config.json' \
               -not -name '.' \
+              -not -name 'config.json' \
+              -not -name 'bot.db' \
               -not -name 'archive' \
               -print0 | sudo xargs -0 rm -rfv --
       - name: Send new files
@@ -50,3 +51,14 @@ jobs:
           script: |
             cd ${{ secrets.REMOTE_PATH }}
             ls config.json || cp config-example.json config.json
+      - name: Restart bot service
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            if [ -n "${{ secrets.TG_BOT_NAME }}" ]; then
+              echo "Restarting ${{ secrets.TG_BOT_NAME }} service"
+              sudo systemctl restart ${{ secrets.TG_BOT_NAME }}
+            fi

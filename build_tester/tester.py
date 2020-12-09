@@ -5,9 +5,9 @@ import time
 
 import requests
 
-from classes.builders.docker import DockerBuilder, DockerInfo
-from classes.builders.virtual_box import VirtualBoxBuilder, VirtualBoxInfo
-from classes.results_sync import ResultsManager, Result
+from build_tester.builders.docker_builder import DockerBuilder, DockerInfo
+from build_tester.builders.virtual_box import VirtualBoxBuilder, VirtualBoxInfo
+from build_tester.results_sync import ResultsManager, Result
 
 
 class Tester:
@@ -27,11 +27,26 @@ class Tester:
     def __parse_config(self, config):
         self.commands_url = config.get('commands_url', 'https://www.tarantool.io/api/tarantool/info/versions/')
 
-        self.__install_dir = './install'
-        self.__local_dir = './local'
-        self.__logs_dir = f'{self.__local_dir}/logs'
-        self.__results_dir = f'{self.__local_dir}/results'
-        self.__results_file = f'{self.__local_dir}/results.json'
+        self.__scripts_dir_path = config.get('scripts_dir_path', './scripts')
+
+        self.__prepare_dir_name = config.get('prepare_dir_name', 'prepare')
+        self.__prepare_dir_path = os.path.join(self.__scripts_dir_path, self.__prepare_dir_name)
+
+        self.__install_dir_name = config.get('install_dir_name', 'install')
+        self.__install_dir_path = os.path.join(self.__scripts_dir_path, self.__install_dir_name)
+
+        self.__local_dir_path = config.get('local_dir_path', './local')
+        self.__remote_dir_path = config.get('remote_dir_path', './remote')
+        self.__archive_dir_path = config.get('archive_dir_path', './archive')
+
+        self.__logs_dir_name = config.get('logs_dir_name', 'logs')
+        self.__logs_dir_path = os.path.join(self.__local_dir_path, self.__logs_dir_name)
+
+        self.__tests_dir_name = config.get('tests_dir_name', 'tests')
+        self.__tests_dir_path = os.path.join(self.__local_dir_path, self.__tests_dir_name)
+
+        self.__results_file_name = config.get('results_file_name', 'results.json')
+        self.__results_file_path = os.path.join(self.__local_dir_path, self.__results_file_name)
 
         os_params = config.get('os_params')
         assert config.get('os_params') is not None, 'No OS params in config!'
@@ -53,7 +68,7 @@ class Tester:
     def __download_scripts(self):
         site_commands = requests.get(self.commands_url).json()
 
-        with open(os.path.join(self.__install_dir, 'default.sh'), mode='r') as fs:
+        with open(os.path.join(self.__install_dir_path, 'default.sh'), mode='r') as fs:
             default_script = fs.read()
 
         builds = []
@@ -80,7 +95,7 @@ class Tester:
                 if len(builds) == builds_count and self.__debug_mode:
                     print(f'OS: {os_name}. Build: {build_name}. {Result.NO_TEST.value}')
 
-                path = os.path.join(self.__install_dir, f'{os_name}_{build_name}.sh')
+                path = os.path.join(self.__install_dir_path, f'{os_name}_{build_name}.sh')
                 with open(path, mode='w') as fs:
                     fs.write(default_script)
                     fs.write('\n'.join(commands))
@@ -89,10 +104,10 @@ class Tester:
         return builds
 
     def test_builds(self):
-        shutil.rmtree(self.__local_dir, ignore_errors=True)
+        shutil.rmtree(self.__local_dir_path, ignore_errors=True)
 
-        os.makedirs(self.__results_dir)
-        os.makedirs(self.__logs_dir)
+        os.makedirs(self.__tests_dir_path)
+        os.makedirs(self.__logs_dir_path)
 
         self.__results = {}
         self.__builds = self.__builds or self.__download_scripts()
@@ -119,15 +134,27 @@ class Tester:
                 result = Result.SKIP
             else:
                 if isinstance(build, DockerInfo):
-                    docker_builder = DockerBuilder(build, log_func=self.__log)
+                    docker_builder = DockerBuilder(
+                        build_info=build,
+                        scripts_dir_path=self.__scripts_dir_path,
+                        tests_dir_path=self.__tests_dir_path,
+                        log_func=self.__log,
+                    )
                     deploy_result = docker_builder.deploy()
                 elif isinstance(build, VirtualBoxInfo):
-                    virtual_box_builder = VirtualBoxBuilder(build, log_func=self.__log)
+                    virtual_box_builder = VirtualBoxBuilder(
+                        build_info=build,
+                        scripts_dir_path=self.__scripts_dir_path,
+                        prepare_dir_path=self.__prepare_dir_path,
+                        install_dir_path=self.__install_dir_path,
+                        tests_dir_path=self.__tests_dir_path,
+                        log_func=self.__log,
+                    )
                     deploy_result = virtual_box_builder.deploy()
                 else:
                     deploy_result = False
 
-                path = os.path.join(self.__logs_dir, f'{os_name}_{build.build_name}.log')
+                path = os.path.join(self.__logs_dir_path, f'{os_name}_{build.build_name}.log')
                 with open(path, mode='w') as fs:
                     logs = '\n'.join(map(lambda x: str(x), self.__logs))
                     fs.write(logs)
@@ -143,7 +170,7 @@ class Tester:
             if result == Result.OK:
                 is_results_ok = False
 
-                path = os.path.join(self.__results_dir, f'{os_name}_{build.build_name}.json')
+                path = os.path.join(self.__tests_dir_path, f'{os_name}_{build.build_name}.json')
                 if os.path.exists(path):
                     with open(path) as fs:
                         try:
@@ -159,12 +186,12 @@ class Tester:
                     result = Result.FAIL
 
             if self.__console_mode:
-                print(f'\r{log_prefix} ')
+                print(f'\r{log_prefix} ', end='')
             print(f'Elapsed time: {time.time() - start:.2f}. {result.value}')
 
             self.__results[os_name][build.build_name] = result
 
-        with open(self.__results_file, mode='w') as fs:
+        with open(self.__results_file_path, mode='w') as fs:
             fs.write(json.dumps(self.__results))
 
     def find_lost_results(self):
@@ -174,6 +201,9 @@ class Tester:
     def sync_results(self):
         self.__builds = self.__builds or self.__download_scripts()
         return self.__results_manager.sync_results(self.__all_builds)
+
+    def get_results(self):
+        return self.__results_manager.get_results()
 
     def archive_results(self):
         return self.__results_manager.archive_results()

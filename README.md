@@ -8,12 +8,13 @@ and tries to run them on different OS.
 1. Install Python 3.6 or higher
 2. Install Docker or/and VirtualBox
 2. Change `config.json` if necessary
-3. Run `main.py`
+3. Run `check.py`
 
 ## Config with all available options
 
 ```json
 {
+  "telegram_token": "1234567890:qWerTyuIOpaSDf-ghJKl-qWerTyuIOpaSDf",
   "commands_url": "https://www.tarantool.io/api/tarantool/info/versions/",
   "send_to_remote": {
     "login": "centos",
@@ -35,7 +36,7 @@ and tries to run them on different OS.
           "name_of_build_1",
           "name_of_build_2"
         ],
-        "no_cache": false
+        "use_cache": false
       },
       "virtual_box": {
         "Name of VirtualBox VM": {

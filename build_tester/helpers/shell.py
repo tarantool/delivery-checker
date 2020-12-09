@@ -1,6 +1,6 @@
 import subprocess
 
-from classes.helpers.common import print_logs
+from build_tester.helpers.common import print_logs
 
 
 class ShellClient:
