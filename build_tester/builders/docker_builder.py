@@ -4,22 +4,30 @@ import os
 import re
 from collections import namedtuple
 
+from docker import from_env as docker_from_env
 from docker.errors import APIError
 from docker.utils.json_stream import json_stream
 
-from classes.helpers.common import print_logs
-from docker import from_env as docker_from_env
+from build_tester.helpers.common import print_logs
 
 DockerInfo = namedtuple(
     typename='DockerInfo',
-    field_names=('os_name', 'build_name', 'image', 'image_version', 'skip', 'no_cache'),
+    field_names=('os_name', 'build_name', 'image', 'image_version', 'skip', 'use_cache'),
 )
 
 
 class DockerBuilder:
-    def __init__(self, build_info, log_func=print):
-        self.log = log_func
+    def __init__(
+        self, build_info,
+        scripts_dir_path='.',
+        tests_dir_path='./local/tests',
+        log_func=print
+    ):
         self.build_info = build_info
+        self.scripts_dir_path = os.path.abspath(scripts_dir_path)
+        self.tests_dir_path = os.path.abspath(tests_dir_path)
+        self.log = log_func
+
         self.__client = docker_from_env()
         self.__build_log = []
         self.__image_id = None
@@ -37,7 +45,7 @@ class DockerBuilder:
                 image=params.get('image', os_name),
                 image_version=version,
                 skip=build_name in params.get('skip', []),
-                no_cache=params.get('no_cache', True),
+                use_cache=params.get('use_cache', False),
             ),
             params.get('versions', ['latest']),
         ))
@@ -58,7 +66,7 @@ class DockerBuilder:
                     image=match.group(2),
                     image_version=match.group(4) or 'latest',
                     skip=build_name in params.get('skip', []),
-                    no_cache=params.get('no_cache', True),
+                    use_cache=params.get('use_cache', False),
                 ))
                 break
 
@@ -134,7 +142,7 @@ class DockerBuilder:
 
         try:
             self.__image_id = self.__build_image(
-                path='.',
+                path=self.scripts_dir_path,
                 tag=container_name,
                 buildargs={
                     'IMAGE': self.build_info.image,
@@ -144,8 +152,7 @@ class DockerBuilder:
                     'TNT_VERSION': self.build_info.build_name.split("_")[-1],
                 },
                 timeout=timeout,
-                nocache=self.build_info.no_cache,
-                rm=True,
+                nocache=not self.build_info.use_cache,
             )
             result = True
 
@@ -168,7 +175,7 @@ class DockerBuilder:
                 image=container_name,
                 name=container_name,
                 ports={3301: 3301},
-                volumes={f'{os.getcwd()}/local/results': {'bind': '/opt/tarantool/results'}},
+                volumes={self.tests_dir_path: {'bind': '/opt/tarantool/results'}},
                 detach=True,
             )
 

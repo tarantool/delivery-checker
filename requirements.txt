@@ -1,3 +1,5 @@
 docker~=4.4.0
 requests~=2.25.0
 paramiko~=2.7.2
+pytelegrambotapi~=3.7.4
+peewee~=3.14.0
