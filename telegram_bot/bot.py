@@ -4,6 +4,7 @@ import logging
 import os
 import textwrap
 
+import emoji as emoji
 from telebot import types, TeleBot
 from telebot.apihelper import ApiTelegramException
 
@@ -60,7 +61,12 @@ class Bot:
         self.__add_message_handler(commands=['unsubscribe'], handler=self.__unsubscribe)
         self.__add_channel_post_handler(commands=['unsubscribe'], handler=self.__unsubscribe)
 
-        self.__add_message_handler(commands=['show_results'], handler=self.__send_results_list)
+        self.__add_message_handler(commands=['show_results'], handler=self.__send_results_list_command)
+
+        self.__add_callback_query_handler(
+            func=lambda call: call.data.startswith('results_list;'),
+            handler=self.__send_results_list_call,
+        )
 
         self.__add_callback_query_handler(
             func=lambda call: call.data.startswith('results;all;'),
@@ -107,12 +113,14 @@ class Bot:
     @staticmethod
     def __dir_name_to_date(dir_name):
         try:
+            dir_name = os.path.basename(dir_name)
             return datetime.datetime.strptime(dir_name, "%Y%m%d_%H%M%S").strftime("%Y.%m.%d %H:%M:%S")
         except ValueError:
             pass
 
     @staticmethod
     def __file_name_to_os_build(name):
+        name = os.path.basename(name)
         name = os.path.splitext(name)[0]
         params = name.split('_', 2)
         if len(params) < 3:
@@ -162,36 +170,81 @@ class Bot:
         ))
 
     @staticmethod
-    def __get_names_keyboard(names, prefix='', name_handler=None, count=None, page=0, row_width=1, reverse=False):
-        names.sort(reverse=reverse)
+    def __get_page(data_list, reverse=False, data_handler=None, count=10, page=1):
+        new_data = []
+        for data in data_list:
+            if data_handler:
+                if data_handler(data) is None:
+                    continue
+            new_data.append(data)
+        data_list = sorted(new_data, reverse=reverse)
 
-        if count is not None:
+        is_end = True
+        if page != 0:
             if page > 0:
-                names = names[count * (page - 1):count * page]
-            if page < 0:
-                end = len(names) + count * (page + 1)  # to handle case with page = -1
-                names = names[count * page:end]
+                begin = count * (page - 1)
+                end = count * page
+            else:
+                begin = count * page
+                end = len(data_list) + count * (page + 1)
 
-        if len(names) == 0:
+            is_end = end >= len(data_list)
+            data_list = data_list[begin:end]
+
+        return data_list, is_end
+
+    def __get_names_keyboard(
+        self,
+        data_list,
+        reverse=False,
+        row_width=1,
+        data_handler=None,
+        prefix='',
+        count=6,
+        page=0,
+        pages_prefix=None,
+    ):
+        page_data, is_end = self.__get_page(
+            data_list=data_list,
+            reverse=reverse,
+            data_handler=data_handler,
+            count=count,
+            page=page,
+        )
+
+        if len(page_data) == 0:
             return
 
-        keyboard = types.InlineKeyboardMarkup(row_width=row_width)
+        keyboard = types.InlineKeyboardMarkup()
         row = []
-        for file in names:
-            name = os.path.basename(file)
-            if name_handler:
-                name = name_handler(name)
-            if name is None:
-                continue
+        for data in page_data:
+            name = data
+            if data_handler:
+                name = data_handler(data)
 
-            file_btn = types.InlineKeyboardButton(text=name, callback_data=f'{prefix}{file}')
-            row.append(file_btn)
-            if len(row) == 2:
+            data_btn = types.InlineKeyboardButton(text=name, callback_data=f'{prefix}{data}')
+            row.append(data_btn)
+            if len(row) == row_width:
                 keyboard.add(*row)
                 row = []
 
         if len(row) != 0:
             keyboard.add(*row)
+
+        if pages_prefix is not None:
+            page_buttons = []
+            if abs(page) > 1:
+                page_buttons.append(types.InlineKeyboardButton(
+                    text=emoji.emojize(':arrow_left:', use_aliases=True),
+                    callback_data=f'{pages_prefix}{page - 1}',
+                ))
+            if not is_end:
+                page_buttons.append(types.InlineKeyboardButton(
+                    text=emoji.emojize(':arrow_right:', use_aliases=True),
+                    callback_data=f'{pages_prefix}{page + 1}',
+                ))
+            if len(page_buttons) > 0:
+                keyboard.add(*page_buttons)
 
         return keyboard
 
@@ -269,39 +322,51 @@ class Bot:
             parse_mode='Markdown',
         )
 
-    def __send_results_list(self, message):
+    #########################
+    # Results list
+    #########################
+
+    def __send_results_list(self, user_id, page):
+        archive_files = []
+        if os.path.exists(self.__archive_dir_path):
+            archive_files = os.listdir(self.__archive_dir_path)
+
+        keyboard = self.__get_names_keyboard(
+            data_list=archive_files,
+            reverse=True,
+            row_width=2,
+            data_handler=self.__dir_name_to_date,
+            prefix=f'results;failed;',
+            page=page,
+            pages_prefix='results_list;',
+        )
+        if keyboard is None:
+            self.__bot.send_message(user_id, f'No results!')
+            return
+
+        self.__bot.send_message(
+            chat_id=user_id,
+            text=f'To show a specific page use `/show_results <page>`\n\nSelect date:',
+            reply_markup=keyboard,
+            parse_mode='Markdown',
+        )
+
+    def __send_results_list_command(self, message):
         page = 1
         words = message.text.split()
         if len(words) > 1:
             page = int(words[1])
 
-        names = []
-        if os.path.exists(self.__archive_dir_path):
-            names = os.listdir(self.__archive_dir_path)
+        self.__send_results_list(message.from_user.id, page)
 
-        keyboard = self.__get_names_keyboard(
-            names=names,
-            prefix=f'results;failed;',
-            name_handler=self.__dir_name_to_date,
-            count=10,
-            page=page,
-            row_width=2,
-            reverse=True,
-        )
-        if keyboard is None:
-            self.__bot.send_message(message.from_user.id, f'No results!')
-            return
+    def __send_results_list_call(self, call):
+        page = 1
+        words = call.data.split(';')
+        if len(words) > 1:
+            page = int(words[1])
 
-        prev_page_text = ''
-        if page > 1:
-            prev_page_text = f'To show the previous page use `/show_results {page - 1}`\n'
-
-        self.__bot.send_message(
-            chat_id=message.from_user.id,
-            text=f'{prev_page_text}To show the next page use `/show_results {page + 1}`\n\nSelect date:',
-            reply_markup=keyboard,
-            parse_mode='Markdown',
-        )
+        self.__bot.answer_callback_query(callback_query_id=call.id)
+        self.__send_results_list(call.from_user.id, page)
 
     #########################
     # Results
@@ -351,20 +416,20 @@ class Bot:
 
         if only_failed:
             results_path = os.path.join(self.__archive_dir_path, date_name, self.__results_file_name)
-            names = self.__get_files(date_dir_path, results_path)
+            files = self.__get_files(date_dir_path, results_path)
         else:
-            names = self.__get_files(date_dir_path)
+            files = self.__get_files(date_dir_path)
 
-        if len(names) == 0 and not only_failed:
+        if len(files) == 0 and not only_failed:
             self.__bot.answer_callback_query(callback_query_id=call.id, text=f'No {type_name}s for selected date!')
             return
 
         self.__bot.answer_callback_query(callback_query_id=call.id)
 
         keyboard = self.__get_names_keyboard(
-            names=names,
+            data_list=files,
             prefix=f'{type_name};{date_name};',
-            name_handler=self.__file_name_to_os_build,
+            data_handler=self.__file_name_to_os_build,
         )
         if only_failed:
             keyboard = keyboard or types.InlineKeyboardMarkup()
@@ -374,7 +439,7 @@ class Bot:
             )
             keyboard.add(show_all)
 
-        if len(names) > 0:
+        if len(files) > 0:
             text = f'Select one of build to get {type_name}s:'
         else:
             text = f'No {type_name}s for failed builds!'
