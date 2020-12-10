@@ -3,3 +3,4 @@ requests~=2.25.0
 paramiko~=2.7.2
 pytelegrambotapi~=3.7.4
 peewee~=3.14.0
+emoji~=0.6.0
