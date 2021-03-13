@@ -15,4 +15,6 @@ set -e
 ## PermitRootLogin yes
 #chsh -s /bin/sh
 
+portsnap fetch
+portsnap extract
 shutdown -p now

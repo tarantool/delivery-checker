@@ -34,7 +34,8 @@
       "virtual_box": {
         "freebsd_12.2": {
           "port": 10023,
-          "skip_prepare": true
+          "prepare_timeout": 900,
+          "run_timeout": 900
         }
       }
     },
