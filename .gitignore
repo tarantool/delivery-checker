@@ -1,6 +1,6 @@
 ### Project ###
 
-install/*.sh
+scripts/install/*.sh
 !scripts/install/default.sh
 local/
 remote/
