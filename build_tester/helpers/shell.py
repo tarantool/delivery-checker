@@ -1,6 +1,6 @@
 import subprocess
 
-from build_tester.helpers.common import print_logs
+from build_tester.helpers.common import print_logs, get_lines_with_title
 
 
 class ShellClient:
@@ -19,7 +19,9 @@ class ShellClient:
         stdout, stderr = process.communicate(input=input_data, timeout=timeout)
         stdout = stdout.decode()
         stderr = stderr.decode()
-        print_logs(out_data=f'{stdout}\n{stderr}\nExit code: {process.returncode}', log=self.log)
+        print_logs(out_data=get_lines_with_title('STDOUT', stdout), log=self.log)
+        print_logs(out_data=get_lines_with_title('STDERR', stderr), log=self.log)
+        print_logs(out_data=get_lines_with_title('EXIT CODE', process.returncode, with_new_line=False), log=self.log)
 
         if process.returncode != 0:
             return f'{stdout}\n{stderr}'
