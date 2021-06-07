@@ -48,6 +48,8 @@ class Tester:
         self.__results_file_name = config.get('results_file_name', 'results.json')
         self.__results_file_path = os.path.join(self.__local_dir_path, self.__results_file_name)
 
+        self.__default_use_cache = config.get('default_use_cache', False)
+
         os_params = config.get('os_params')
         assert config.get('os_params') is not None, 'No OS params in config!'
 
@@ -84,12 +86,23 @@ class Tester:
 
                 # This is to avoid running Docker in Docker or Docker in VirtualBox
                 if 'docker' not in os_name:
-                    builds += DockerBuilder.get_builds(self.__docker_params, os_name, build_name)
-                    builds += VirtualBoxBuilder.get_builds(self.__virtual_box_params, os_name, build_name)
+                    builds += DockerBuilder.get_builds(
+                        self.__docker_params,
+                        os_name, build_name,
+                        self.__default_use_cache,
+                    )
+                    builds += VirtualBoxBuilder.get_builds(
+                        self.__virtual_box_params,
+                        os_name, build_name,
+                    )
 
                 # Find name of image in commands and use it
                 else:
-                    builds += DockerBuilder.get_docker_builds(self.__docker_params, os_name, build_name, commands)
+                    builds += DockerBuilder.get_docker_builds(
+                        self.__docker_params,
+                        os_name, build_name,
+                        commands, self.__default_use_cache,
+                    )
                     commands = []
 
                 if len(builds) == builds_count and self.__debug_mode:
