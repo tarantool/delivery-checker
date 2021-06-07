@@ -1,0 +1,66 @@
+
+{
+***REMOVED***
+  "telegram_db": {
+    "name": "postgres_db_name",
+    "user": "delivery_checker_bot",
+    "password": "delivery_checker_bot_password",
+    "file": "bot.db"
+  },
+
+  "scripts_dir_path": "./scripts",
+  "prepare_dir_name": "prepare",
+  "install_dir_name": "install",
+
+  "local_dir_path": "./local",
+  "remote_dir_path": "./remote",
+  "archive_dir_path": "./archive",
+  "logs_dir_name": "logs",
+  "tests_dir_name": "tests",
+  "results_file_name": "results.json",
+
+  "commands_url": "https://www.tarantool.io/api/tarantool/info/versions/",
+  "send_to_remote": {
+    "login": "centos",
+    "password": "centos",
+    "host": "123.456.789.012",
+    "archive": "server_name",
+    "remote_dir": "/opt/delivery_checker/remote"
+  },
+  "use_remote_results": false,
+
+  "default_use_cache": false,
+  "os_params": {
+    "example_os": {
+      "docker": {
+        "image": "name_of_docker_image",
+        "versions": [
+          "2020",
+          "latest"
+        ],
+        "skip": [
+          "name_of_build_1",
+          "name_of_build_2"
+        ],
+        "use_cache": false
+      },
+      "virtual_box": {
+        "Name of VirtualBox VM": {
+          "login": "root",
+          "password": "toor",
+          "host": "127.0.0.1",
+          "port": 22,
+          "remote_dir": "/opt/tarantool",
+          "skip_prepare": false,
+          "prepare_timeout": 360,
+          "run_timeout": 60,
+          "skip": [
+            "name_of_build_1",
+            "name_of_build_2"
+          ]
+        },
+        "example_os_vm": {}
+      }
+    }
+  }
+}

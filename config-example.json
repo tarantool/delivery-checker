@@ -1,4 +1,5 @@
 {
+***REMOVED***
   "os_params": {
     "amazon-linux": {
       "docker": {
@@ -18,7 +19,13 @@
       }
     },
     "debian": {
-      "docker": {}
+      "docker": {
+        "versions": [
+          "stretch",
+          "buster",
+          "bullseye"
+        ]
+      }
     },
     "docker-hub": {
       "docker": {}
@@ -26,7 +33,8 @@
     "fedora": {
       "docker": {
         "versions": [
-          "31"
+          "31",
+          "32"
         ]
       }
     },
