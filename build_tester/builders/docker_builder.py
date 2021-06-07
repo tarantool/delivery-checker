@@ -33,7 +33,7 @@ class DockerBuilder:
         self.__image_id = None
 
     @staticmethod
-    def get_builds(config, os_name='docker', build_name='latest'):
+    def get_builds(config, os_name='docker', build_name='latest', default_use_cache=False):
         params = config.get(os_name)
         if params is None:
             return []
@@ -45,13 +45,13 @@ class DockerBuilder:
                 image=params.get('image', os_name),
                 image_version=version,
                 skip=build_name in params.get('skip', []),
-                use_cache=params.get('use_cache', False),
+                use_cache=params.get('use_cache', default_use_cache),
             ),
             params.get('versions', ['latest']),
         ))
 
     @staticmethod
-    def get_docker_builds(config, os_name, build_name, commands):
+    def get_docker_builds(config, os_name, build_name, commands, default_use_cache=False):
         params = config.get(os_name)
         if params is None:
             return []
@@ -66,7 +66,7 @@ class DockerBuilder:
                     image=match.group(2),
                     image_version=match.group(4) or 'latest',
                     skip=build_name in params.get('skip', []),
-                    use_cache=params.get('use_cache', False),
+                    use_cache=params.get('use_cache', default_use_cache),
                 ))
                 break
 
