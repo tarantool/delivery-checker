@@ -16,15 +16,15 @@ class SubscribeType(Enum):
 
 class DB:
     def __init__(self, config):
-        db_name = config.get('db_name')
+        db_name = config.get('name')
         if db_name is None:
-            db_file = config.get('db_file')
+            db_file = config.get('file')
             if db_file is None:
                 db_file = 'bot.db'
             db = SqliteDatabase(db_file)
         else:
-            db_user = config.get('db_user', 'delivery_checker_bot')
-            db_password = config.get('db_password')
+            db_user = config.get('user', 'delivery_checker_bot')
+            db_password = config.get('password')
             db = PostgresqlDatabase(db_name, user=db_user, password=db_password)
 
         class BaseModel(Model):
