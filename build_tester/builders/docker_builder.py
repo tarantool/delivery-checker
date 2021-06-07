@@ -8,7 +8,7 @@ from docker import from_env as docker_from_env
 from docker.errors import APIError
 from docker.utils.json_stream import json_stream
 
-from build_tester.helpers.common import print_logs
+from build_tester.helpers.common import print_logs, get_header_str, get_subheader_str
 
 DockerInfo = namedtuple(
     typename='DockerInfo',
@@ -73,6 +73,8 @@ class DockerBuilder:
         return builds
 
     def rm(self, container_name):
+        self.log(get_header_str('REMOVE STEP'))
+
         try:
             try:
                 exists_containers = self.__client.containers.list(all=True)
@@ -93,10 +95,10 @@ class DockerBuilder:
                     raise Exception(e)
 
         except Exception as e:
-            self.log(f'Impossible to remove container: {e}')
+            self.log(f'Impossible to remove container: {e}\n')
             return False
 
-        self.log(f'Container {container_name} removed.')
+        self.log(f'Container {container_name} removed.\n')
         return True
 
     # Copy of self.__client.images.build() to get build logs on timeout
@@ -138,6 +140,8 @@ class DockerBuilder:
         return logs_string
 
     def build(self, container_name, timeout=60 * 15):
+        self.log(get_header_str('BUILD STEP'))
+
         result = False
 
         try:
@@ -158,16 +162,18 @@ class DockerBuilder:
 
         except Exception as e:
             if 'Read timed out' in str(e):
-                self.log('Timeout of building container!')
+                self.log('Timeout of building container!\n')
             else:
-                self.log(f'Impossible to build container: {e}!')
+                self.log(f'Impossible to build container: {e}!\n')
 
-        self.log('Docker build logs:')
-        print_logs(out_data=self.__get_build_logs(), log=self.log, out_prefix='')
+        self.log(get_subheader_str('BUILD LOGS'))
+        print_logs(out_data=self.__get_build_logs(), log=self.log)
 
         return result
 
     def run(self, container_name, timeout=60):
+        self.log(get_header_str('RUN STEP'))
+
         result = False
 
         try:
@@ -190,13 +196,13 @@ class DockerBuilder:
             if res['StatusCode'] == 0:
                 result = True
             else:
-                self.log(f'Error code: {res["StatusCode"]}, Error message: {res["Error"]}')
+                self.log(f'Error code: {res["StatusCode"]}, Error message: {res["Error"]}\n')
 
-            self.log('Runtime logs:')
-            print_logs(out_data=container.logs().decode(), log=self.log, out_prefix='')
+            self.log(get_subheader_str('RUNTIME LOGS'))
+            print_logs(out_data=container.logs().decode(), log=self.log)
 
         except Exception as e:
-            self.log(f'Impossible to run container: {e}')
+            self.log(f'Impossible to run container: {e}\n')
 
         return result
 

@@ -67,6 +67,17 @@ class Tester:
     def __log(self, msg):
         self.__logs.append(msg)
 
+    @staticmethod
+    def __get_build_os_name(build):
+        if isinstance(build, DockerInfo):
+            os_name = f'{build.os_name}_{build.image_version}'
+        elif isinstance(build, VirtualBoxInfo):
+            os_name = f'{build.vm_name}'
+        else:
+            os_name = build.os_name
+
+        return os_name
+
     def __download_scripts(self):
         site_commands = requests.get(self.commands_url).json()
 
@@ -114,6 +125,7 @@ class Tester:
                     fs.write('\n'.join(commands))
                     fs.write('\n')
 
+        builds.sort(key=lambda build: f'{self.__get_build_os_name(build)}_{build.build_name}')
         return builds
 
     def test_builds(self):
@@ -127,12 +139,7 @@ class Tester:
         for build in self.__builds:
             self.__logs.clear()
 
-            if isinstance(build, DockerInfo):
-                os_name = f'{build.os_name}_{build.image_version}'
-            elif isinstance(build, VirtualBoxInfo):
-                os_name = f'{build.vm_name}'
-            else:
-                os_name = build.os_name
+            os_name = self.__get_build_os_name(build)
 
             log_prefix = f'OS: {os_name}. Build: {build.build_name}.'
             if self.__console_mode:

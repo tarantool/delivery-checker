@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from paramiko import SSHClient, AutoAddPolicy
 
-from build_tester.helpers.common import wait_until, print_logs
+from build_tester.helpers.common import wait_until, print_logs, get_lines_with_title
 
 Credentials = namedtuple(
     typename='Credentials',
@@ -103,7 +103,8 @@ class SshClient:
 
             exit_code = self.__wait_exit_code(channel, timeout)
             output = self.__get_channel_output(channel)
-            print_logs(out_data=f'Logs:\n{output}\nExit code: {exit_code}', log=self.log)
+            print_logs(out_data=get_lines_with_title('LOGS', output), log=self.log)
+            print_logs(out_data=get_lines_with_title('EXIT CODE', str(exit_code), with_new_line=False), log=self.log)
             if exit_code != 0:
                 return output
 

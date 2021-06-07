@@ -4,7 +4,7 @@ from collections import namedtuple
 from paramiko import SFTPClient
 from paramiko.common import o777
 
-from build_tester.helpers.common import wait_until
+from build_tester.helpers.common import wait_until, get_header_str
 from build_tester.helpers.shell import ShellClient
 from build_tester.helpers.ssh import Credentials, SshClient
 
@@ -63,6 +63,8 @@ class VirtualBoxBuilder:
         ))
 
     def restore(self, timeout=60):
+        self.log(get_header_str('RESTORE STEP'))
+
         try:
             vm_name = self.build_info.vm_name
             if self.__shell_client.exec_commands(
@@ -82,11 +84,13 @@ class VirtualBoxBuilder:
             return True
 
         except Exception as e:
-            self.log(f'Impossible to restore virtual machine:\n{e}')
+            self.log(f'Impossible to restore virtual machine:\n{e}\n')
 
         return False
 
     def start(self, timeout=60 * 5):
+        self.log(get_header_str('START STEP'))
+
         try:
             vm_name = self.build_info.vm_name
 
@@ -105,11 +109,13 @@ class VirtualBoxBuilder:
             return True
 
         except Exception as e:
-            self.log(f'Impossible to start virtual machine:\n{e}')
+            self.log(f'Impossible to start virtual machine:\n{e}\n')
 
         return False
 
     def prepare(self, timeout=60 * 5):
+        self.log(get_header_str('PREPARE STEP'))
+
         if self.build_info.skip_prepare:
             return True
 
@@ -159,11 +165,13 @@ class VirtualBoxBuilder:
             return self.start()
 
         except Exception as e:
-            self.log(f'Impossible to prepare virtual machine:\n{e}')
+            self.log(f'Impossible to prepare virtual machine:\n{e}\n')
 
         return False
 
     def run(self, timeout=60 * 5):
+        self.log(get_header_str('RUN STEP'))
+
         if self.build_info.run_timeout is not None:
             timeout = self.build_info.run_timeout
 
@@ -207,7 +215,7 @@ class VirtualBoxBuilder:
             return True
 
         except Exception as e:
-            self.log(f'Impossible to run tarantool on virtual machine:\n{e}')
+            self.log(f'Impossible to run tarantool on virtual machine:\n{e}\n')
 
         return False
 
