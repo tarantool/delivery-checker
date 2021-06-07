@@ -24,14 +24,16 @@ class Bot:
             config = json.load(fs)
 
             self.__token = config.get('telegram_token')
-            assert self.__token is not None, 'No telegram token to use telegram bot!'
+            assert self.__token != '1234567890:qWerTyuIOpaSDf-ghJKl-qWerTyuIOpaSDf', \
+                'Your should change default Telegram token with your own to use Telegram bot!'
+            assert self.__token is not None, 'No Telegram token to use Telegram bot!'
 
             self.__archive_dir_path = config.get('archive_dir_path', './archive')
             self.__logs_dir_name = config.get('logs_dir_name', 'logs')
             self.__tests_dir_name = config.get('tests_dir_name', 'tests')
             self.__results_file_name = config.get('results_file_name', 'results.json')
 
-        self.__db = DB(config)
+        self.__db = DB(config.get('telegram_db', {}))
         self.__bot = TeleBot(self.__token)
         self.__username = f'@{self.__bot.get_me().username}'
         self.__init_handlers()
@@ -123,10 +125,19 @@ class Bot:
         name = os.path.basename(name)
         name = os.path.splitext(name)[0]
         params = name.split('_', 2)
-        if len(params) < 3:
-            return name
+        if len(params) == 1:
+            return params[0], None
+        if len(params) == 2:
+            return params[0], params[1]
 
-        return f'OS: {params[0]} {params[1]}. Build Name: {params[2].replace("_", " ")}'
+        return f'{params[0]} {params[1]}', params[2].replace("_", " ")
+
+    @staticmethod
+    def __file_name_to_os_build_str(name):
+        os_name, build_name = Bot.__file_name_to_os_build(name)
+        if build_name is None:
+            return os_name
+        return f'OS: {os_name}. Build Name: {build_name}'
 
     @staticmethod
     def __get_failed_results(results):
@@ -429,7 +440,7 @@ class Bot:
         keyboard = self.__get_names_keyboard(
             data_list=files,
             prefix=f'{type_name};{date_name};',
-            data_handler=self.__file_name_to_os_build,
+            data_handler=self.__file_name_to_os_build_str,
         )
         if only_failed:
             keyboard = keyboard or types.InlineKeyboardMarkup()
@@ -494,11 +505,16 @@ class Bot:
 
             message = ''
             for test_name, result in tests.items():
-                message += f'Test {test_name}: {result}\n'
+                message += f'- {test_name}: {result}\n'
 
+            os_name, build_name = self.__file_name_to_os_build(test_file)
             self.__bot.send_message(
                 call.from_user.id,
-                f'Tests results from {self.__dir_name_to_date(dir_name)}:\n{message}',
+                f'OS: {os_name}\n'
+                f'Build Name: {build_name}\n'
+                f'Time: {self.__dir_name_to_date(dir_name)}\n\n'
+                f'Tests results:\n'
+                f'{message}',
             )
 
     #########################
