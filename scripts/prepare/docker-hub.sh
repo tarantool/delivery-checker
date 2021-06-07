@@ -1,6 +1,6 @@
 #!/bin/sh
 
 # Exit when any command in script file fails
-set -e
+set -ex
 
 # Preparation commands
