@@ -23,15 +23,17 @@ class Result(str, Enum):
     TIMEOUT = 'TIMEOUT'
     ERROR = 'ERROR'
     FAIL = 'FAIL'
+    CANCELED = 'CANCELED'
 
 
 RESULTS_PRIORITY = {
     Result.NO_TEST: 1,
     Result.SKIP: 2,
-    Result.TIMEOUT: 3,
-    Result.ERROR: 4,
-    Result.FAIL: 5,
-    Result.OK: 6,
+    Result.CANCELED: 3,
+    Result.OK: 4,
+    Result.TIMEOUT: 5,
+    Result.ERROR: 6,
+    Result.FAIL: 7,
 }
 
 SUCCESS_RESULTS = [
