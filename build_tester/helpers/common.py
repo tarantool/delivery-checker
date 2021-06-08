@@ -1,4 +1,27 @@
+import os
 import time
+
+
+def get_best_prepare_script(prepare_dir_path, set_1, set_2=None):
+    set_2 = set_2 or set()
+
+    best_script_score = 1
+    best_script_name = None
+
+    def name_score(name):
+        name = set(os.path.splitext(name)[0].split('_'))
+        return max(
+            len(name & set_1) * 2 + 1 if name.issubset(set_1) else 0,
+            len(name & set_2) * 2 if name.issubset(set_2) else 0,
+        )
+
+    for script_name in sorted(os.listdir(prepare_dir_path)):
+        score = name_score(script_name)
+        if score > best_script_score:
+            best_script_score = score
+            best_script_name = os.path.join(prepare_dir_path, script_name)
+
+    return best_script_name
 
 
 def wait_until(func, excepted=None, timeout=30, period=1, error_msg='Impossible to wait', log=print, *args, **kwargs):
