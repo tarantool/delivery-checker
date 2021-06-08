@@ -230,14 +230,17 @@ class VirtualBoxBuilder:
         return False
 
     def deploy(self):
-        is_success = True
-        if not self.restore():
-            is_success = False
-        if is_success and not self.start():
-            is_success = False
-        if is_success and not self.prepare():
-            is_success = False
-        if is_success and not self.run():
-            is_success = False
-        self.restore()
+        try:
+            is_success = True
+            if not self.restore():
+                is_success = False
+            if is_success and not self.start():
+                is_success = False
+            if is_success and not self.prepare():
+                is_success = False
+            if is_success and not self.run():
+                is_success = False
+        finally:
+            self.restore()
+
         return is_success

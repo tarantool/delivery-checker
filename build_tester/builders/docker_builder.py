@@ -223,12 +223,15 @@ class DockerBuilder:
         return result
 
     def deploy(self, container_name='tnt_builder'):
-        is_success = True
-        if not self.rm(container_name):
-            is_success = False
-        if is_success and not self.build(container_name):
-            is_success = False
-        if is_success and not self.run(container_name):
-            is_success = False
-        self.rm(container_name)
+        try:
+            is_success = True
+            if not self.rm(container_name):
+                is_success = False
+            if is_success and not self.build(container_name):
+                is_success = False
+            if is_success and not self.run(container_name):
+                is_success = False
+        finally:
+            self.rm(container_name)
+
         return is_success
