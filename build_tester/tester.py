@@ -67,6 +67,16 @@ class Tester:
     def __log(self, msg):
         self.__logs.append(msg)
 
+    def __save_logs(self, path=None):
+        if path is None:
+            path = os.path.join(self.__logs_dir_path, f'last.log')
+
+        with open(path, mode='w') as fs:
+            logs = '\n'.join(map(lambda x: str(x), self.__logs))
+            fs.write(logs)
+
+        return logs
+
     @staticmethod
     def __get_build_os_name(build):
         if isinstance(build, DockerInfo):
@@ -140,9 +150,11 @@ class Tester:
         os.makedirs(self.__tests_dir_path)
         os.makedirs(self.__logs_dir_path)
 
+        canceled = False
         self.__results = {}
         self.__builds = self.__builds or self.__download_scripts()
         for build in self.__builds:
+
             self.__logs.clear()
 
             os_name = self.__get_build_os_name(build)
@@ -154,63 +166,74 @@ class Tester:
                 print(f'{log_prefix} ', end='')
 
             self.__results[os_name] = self.__results.get(os_name, {})
+            install_logs_path = os.path.join(self.__logs_dir_path, f'{os_name}_{build.build_name}.log')
             start = time.time()
 
-            if build.skip:
-                result = Result.SKIP
-            else:
-                if isinstance(build, DockerInfo):
-                    docker_builder = DockerBuilder(
-                        build_info=build,
-                        scripts_dir_path=self.__scripts_dir_path,
-                        prepare_dir_path=self.__prepare_dir_path,
-                        tests_dir_path=self.__tests_dir_path,
-                        log_func=self.__log,
-                    )
-                    deploy_result = docker_builder.deploy()
-                elif isinstance(build, VirtualBoxInfo):
-                    virtual_box_builder = VirtualBoxBuilder(
-                        build_info=build,
-                        scripts_dir_path=self.__scripts_dir_path,
-                        prepare_dir_path=self.__prepare_dir_path,
-                        install_dir_path=self.__install_dir_path,
-                        tests_dir_path=self.__tests_dir_path,
-                        log_func=self.__log,
-                    )
-                    deploy_result = virtual_box_builder.deploy()
+            try:
+                if canceled:
+                    raise KeyboardInterrupt
+
+                if build.skip:
+                    result = Result.SKIP
                 else:
-                    deploy_result = False
+                    if isinstance(build, DockerInfo):
+                        docker_builder = DockerBuilder(
+                            build_info=build,
+                            scripts_dir_path=self.__scripts_dir_path,
+                            prepare_dir_path=self.__prepare_dir_path,
+                            tests_dir_path=self.__tests_dir_path,
+                            log_func=self.__log,
+                        )
+                        deploy_result = docker_builder.deploy()
+                    elif isinstance(build, VirtualBoxInfo):
+                        virtual_box_builder = VirtualBoxBuilder(
+                            build_info=build,
+                            scripts_dir_path=self.__scripts_dir_path,
+                            prepare_dir_path=self.__prepare_dir_path,
+                            install_dir_path=self.__install_dir_path,
+                            tests_dir_path=self.__tests_dir_path,
+                            log_func=self.__log,
+                        )
+                        deploy_result = virtual_box_builder.deploy()
+                    else:
+                        deploy_result = False
 
-                path = os.path.join(self.__logs_dir_path, f'{os_name}_{build.build_name}.log')
-                with open(path, mode='w') as fs:
-                    logs = '\n'.join(map(lambda x: str(x), self.__logs))
-                    fs.write(logs)
+                    logs = self.__save_logs(install_logs_path)
 
-                if deploy_result:
-                    result = Result.OK
-                else:
-                    result = Result.ERROR
-                    logs = logs.lower()
-                    if 'timeout' in logs or 'timed out' in logs:
-                        result = Result.TIMEOUT
+                    if deploy_result:
+                        result = Result.OK
+                    else:
+                        result = Result.ERROR
+                        logs = logs.lower()
+                        if 'timeout' in logs or 'timed out' in logs:
+                            result = Result.TIMEOUT
 
-            if result == Result.OK:
-                is_results_ok = False
+                if result == Result.OK:
+                    is_results_ok = False
 
-                path = os.path.join(self.__tests_dir_path, f'{os_name}_{build.build_name}.json')
-                if os.path.exists(path):
-                    with open(path) as fs:
-                        try:
-                            build_results = json.load(fs)
-                            is_results_ok = all(map(
-                                lambda build_res: build_res == 'OK',
-                                build_results.values(),
-                            ))
-                        except Exception:
-                            pass
+                    path = os.path.join(self.__tests_dir_path, f'{os_name}_{build.build_name}.json')
+                    if os.path.exists(path):
+                        with open(path) as fs:
+                            try:
+                                build_results = json.load(fs)
+                                is_results_ok = all(map(
+                                    lambda build_res: build_res == 'OK',
+                                    build_results.values(),
+                                ))
+                            except Exception:
+                                pass
 
-                if not is_results_ok:
-                    result = Result.FAIL
+                    if not is_results_ok:
+                        result = Result.FAIL
+
+            except KeyboardInterrupt:
+                canceled = True
+                result = Result.CANCELED
+                self.__save_logs(install_logs_path)
+
+            except Exception:
+                result = Result.ERROR
+                self.__save_logs(install_logs_path)
 
             if self.__console_mode:
                 print(f'\r{log_prefix} ', end='')
