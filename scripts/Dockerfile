@@ -10,8 +10,9 @@ ENV TZ="Europe/Moscow"
 WORKDIR ${WORK_DIR}
 
 ARG OS_NAME="docker"
+ARG PREPARE_SCRIPT_NAME="${OS_NAME}.sh"
 
-COPY prepare/${OS_NAME}.sh prepare.sh
+COPY "prepare/${PREPARE_SCRIPT_NAME}" prepare.sh
 RUN chmod +x prepare.sh
 RUN ./prepare.sh
 

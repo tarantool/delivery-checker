@@ -7,7 +7,7 @@ set -ex
 
 # To install tzdata in docker
 # https://dev.to/setevoy/docker-configure-tzdata-and-timezone-during-build-20bk
-ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+ln -snf "/usr/share/zoneinfo/${TZ}" "/etc/localtime" && echo "${TZ}" >"/etc/timezone"
 
 # To download and execute tarantool install script
 apt-get update

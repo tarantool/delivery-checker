@@ -4,7 +4,7 @@ from collections import namedtuple
 from paramiko import SFTPClient
 from paramiko.common import o777
 
-from build_tester.helpers.common import wait_until, get_header_str
+from build_tester.helpers.common import wait_until, get_header_str, get_best_prepare_script
 from build_tester.helpers.shell import ShellClient
 from build_tester.helpers.ssh import Credentials, SshClient
 
@@ -113,10 +113,20 @@ class VirtualBoxBuilder:
 
         return False
 
+    def __get_best_prepare_script(self):
+        vm_prefix = f'{self.build_info.vm_name}_{self.build_info.build_name}'
+        vm_prefix = set(vm_prefix.split('_'))
+
+        os_prefix = f'{self.build_info.os_name}_{self.build_info.build_name}'
+        os_prefix = set(os_prefix.split('_'))
+
+        return get_best_prepare_script(self.prepare_dir_path, vm_prefix, os_prefix)
+
     def prepare(self, timeout=60 * 5):
         self.log(get_header_str('PREPARE STEP'))
 
-        if self.build_info.skip_prepare:
+        best_prepare_script = self.__get_best_prepare_script()
+        if self.build_info.skip_prepare or best_prepare_script is None:
             return True
 
         if self.build_info.prepare_timeout is not None:
@@ -134,7 +144,7 @@ class VirtualBoxBuilder:
 
             sftp: SFTPClient = self.__ssh_client.get_sftp()
             sftp.chdir(remote_dir)
-            sftp.put(os.path.join(self.prepare_dir_path, f'{self.build_info.os_name}.sh'), 'prepare.sh')
+            sftp.put(best_prepare_script, 'prepare.sh')
             sftp.chmod('prepare.sh', o777)
 
             if self.__ssh_client.exec_ssh_commands(

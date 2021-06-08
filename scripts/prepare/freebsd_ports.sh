@@ -4,3 +4,7 @@
 set -ex
 
 # Preparation commands
+
+portsnap fetch
+portsnap extract
+shutdown -p now
