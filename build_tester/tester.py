@@ -81,6 +81,12 @@ class Tester:
     def __download_scripts(self):
         site_commands = requests.get(self.commands_url).json()
 
+        # Remove old scripts
+        for file in os.listdir(self.__install_dir_path):
+            if file != 'default.sh':
+                os.remove(os.path.join(self.__install_dir_path, file))
+
+        # Get base of install scripts
         with open(os.path.join(self.__install_dir_path, 'default.sh'), mode='r') as fs:
             default_script = fs.read()
 
@@ -157,6 +163,7 @@ class Tester:
                     docker_builder = DockerBuilder(
                         build_info=build,
                         scripts_dir_path=self.__scripts_dir_path,
+                        prepare_dir_path=self.__prepare_dir_path,
                         tests_dir_path=self.__tests_dir_path,
                         log_func=self.__log,
                     )

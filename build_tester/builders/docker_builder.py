@@ -8,7 +8,7 @@ from docker import from_env as docker_from_env
 from docker.errors import APIError
 from docker.utils.json_stream import json_stream
 
-from build_tester.helpers.common import print_logs, get_header_str, get_subheader_str
+from build_tester.helpers.common import print_logs, get_header_str, get_subheader_str, get_best_prepare_script
 
 DockerInfo = namedtuple(
     typename='DockerInfo',
@@ -20,11 +20,13 @@ class DockerBuilder:
     def __init__(
         self, build_info,
         scripts_dir_path='.',
+        prepare_dir_path='./prepare',
         tests_dir_path='./local/tests',
         log_func=print
     ):
         self.build_info = build_info
         self.scripts_dir_path = os.path.abspath(scripts_dir_path)
+        self.prepare_dir_path = os.path.abspath(prepare_dir_path)
         self.tests_dir_path = os.path.abspath(tests_dir_path)
         self.log = log_func
 
@@ -139,6 +141,19 @@ class DockerBuilder:
                 logs_string += json.dumps(msg) + '\n'
         return logs_string
 
+    def __get_best_prepare_script(self):
+        os_prefix = f'{self.build_info.os_name}_{self.build_info.image_version}_{self.build_info.build_name}'
+        os_prefix = set(os_prefix.split('_'))
+
+        image_prefix = f'{self.build_info.image}_{self.build_info.image_version}_{self.build_info.build_name}'
+        image_prefix = set(image_prefix.split('_'))
+
+        best_script_path = get_best_prepare_script(self.prepare_dir_path, os_prefix, image_prefix)
+        if best_script_path is not None:
+            return os.path.basename(best_script_path)
+
+        return 'empty.sh'
+
     def build(self, container_name, timeout=60 * 15):
         self.log(get_header_str('BUILD STEP'))
 
@@ -152,6 +167,7 @@ class DockerBuilder:
                     'IMAGE': self.build_info.image,
                     'VERSION': self.build_info.image_version,
                     'OS_NAME': self.build_info.os_name,
+                    'PREPARE_SCRIPT_NAME': self.__get_best_prepare_script(),
                     'BUILD_NAME': self.build_info.build_name,
                     'TNT_VERSION': self.build_info.build_name.split("_")[-1],
                 },
