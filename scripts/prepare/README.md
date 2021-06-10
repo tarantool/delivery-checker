@@ -33,13 +33,13 @@ Next, you should install the OS, connect to VM and make some actions:
 5. open shell and exec this commands:
 
 ```shell
-# Install xcode:
+# Install xcode
 git --version
 
-# Check JDK installation (and install if necessary):
+# Check JDK installation (and install if necessary)
 java --version
 
-# Install Homebrew:
+# Install Homebrew
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
 # Add paths to PATH
@@ -65,9 +65,17 @@ choosing this options:
 After OS install, connect to VM and make some actions:
 
 ```shell
-# Add/uncomment "PermitRootLogin yes" line in SSH config:
+# Add/uncomment "PermitRootLogin yes" line in SSH config
 vi /etc/ssh/sshd_config
 
-# Change default shell:
+# Change default shell
 chsh -s /bin/sh
+
+# Download and extract ports
+portsnap fetch extract
+
+# It is also better to manually build the dependencies
+# so that you do not get a timeout error at the prepare stage
+cd /usr/ports/databases/tarantool
+make configure BATCH=yes
 ```
