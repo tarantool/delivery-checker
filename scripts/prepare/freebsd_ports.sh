@@ -5,6 +5,12 @@ set -ex
 
 # Preparation commands
 
-portsnap fetch
-portsnap extract
+# Update ports
+portsnap fetch update
+
+# Download dependencies to cache it
+cd /usr/ports/databases/tarantool
+make configure BATCH=yes
+
+# Shutdown VM to indicate that preparation is finished
 shutdown -p now
