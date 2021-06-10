@@ -1,5 +1,4 @@
 {
-***REMOVED***
   "os_params": {
     "amazon-linux": {
       "docker": {
@@ -42,7 +41,7 @@
       "virtual_box": {
         "freebsd_12.2": {
           "port": 10023,
-          "prepare_timeout": 900,
+          "prepare_timeout": 2700,
           "run_timeout": 900
         }
       }

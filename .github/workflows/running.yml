@@ -7,16 +7,15 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Run delivery checker
-        uses: appleboy/ssh-action@master
+        uses: garygrossgarten/github-action-ssh@release
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          command_timeout: 360m
-          script: |
+          privateKey: ${{ secrets.SSH_KEY }}
+          command: |
             cd ${{ secrets.REMOTE_PATH }}
             source venv/bin/activate
-            python3 check.py
+            ./run_check.sh
             export EXIT_CODE=$?
             sudo chown -R ${{ secrets.USERNAME }}:${{ secrets.USERNAME }} local
             exit $EXIT_CODE
