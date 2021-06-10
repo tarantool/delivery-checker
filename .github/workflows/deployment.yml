@@ -9,12 +9,12 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Clear old files
-        uses: appleboy/ssh-action@master
+        uses: garygrossgarten/github-action-ssh@release
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
+          privateKey: ${{ secrets.SSH_KEY }}
+          command: |
             cd ${{ secrets.REMOTE_PATH }}
             find . -maxdepth 1 \
               -not -name '.' \
@@ -23,42 +23,49 @@ jobs:
               -not -name 'archive' \
               -print0 | sudo xargs -0 rm -rfv --
       - name: Send new files
-        uses: appleboy/scp-action@master
+        uses: garygrossgarten/github-action-scp@release
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          source: "*,!.*"
-          target: "${{ secrets.REMOTE_PATH }}/"
+          privateKey: ${{ secrets.SSH_KEY }}
+          local: "./"
+          remote: "${{ secrets.REMOTE_PATH }}/"
       - name: Install dependences
-        uses: appleboy/ssh-action@master
+        uses: garygrossgarten/github-action-ssh@release
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
+          privateKey: ${{ secrets.SSH_KEY }}
+          command: |
             cd ${{ secrets.REMOTE_PATH }}
+            git reset --hard
             python3 -m venv venv
             source venv/bin/activate
             pip install --upgrade pip
             pip install -r requirements.txt
       - name: Check config
-        uses: appleboy/ssh-action@master
+        uses: garygrossgarten/github-action-ssh@release
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
+          privateKey: ${{ secrets.SSH_KEY }}
+          command: |
             cd ${{ secrets.REMOTE_PATH }}
             ls config.json || cp config-example.json config.json
       - name: Restart bot service
-        uses: appleboy/ssh-action@master
+        uses: garygrossgarten/github-action-ssh@release
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
+          privateKey: ${{ secrets.SSH_KEY }}
+          command: |
             if [ -n "${{ secrets.TG_BOT_NAME }}" ]; then
-              echo "Restarting ${{ secrets.TG_BOT_NAME }} service"
-              sudo systemctl restart ${{ secrets.TG_BOT_NAME }}
+              if [ "$(uname -s)" -eq "Linux" ]; then
+                echo "Restarting '${{ secrets.TG_BOT_NAME }}' service"
+                sudo systemctl restart ${{ secrets.TG_BOT_NAME }}
+              fi
+              if [ "$(uname -s)" -eq "Darwin" ]; then
+                echo "Restarting '${{ secrets.TG_BOT_NAME }}' Launch Agent"
+                sudo launchctl restart ${{ secrets.TG_BOT_NAME }}
+              fi
             fi
