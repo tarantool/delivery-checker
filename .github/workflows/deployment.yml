@@ -14,7 +14,9 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           privateKey: ${{ secrets.SSH_KEY }}
-          command: ./service.sh uninstall
+          command: |
+            cd ${{ secrets.REMOTE_PATH }}
+            ./service.sh uninstall || true
       - name: Clear old files
         uses: garygrossgarten/github-action-ssh@release
         with:
@@ -64,4 +66,6 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           privateKey: ${{ secrets.SSH_KEY }}
-          command: ./service.sh install
+          command: |
+            cd ${{ secrets.REMOTE_PATH }}
+            ./service.sh install
