@@ -25,10 +25,9 @@ if [ -n "${FILE_MODE}" ] && [ -z "${LOG_FILE}" ]; then
 fi
 
 cd "$(dirname "$0")"
-source venv/bin/activate
 if [ -z "${LOG_FILE}" ]; then
-    python3 bot.py
+    ./venv/bin/python bot.py
 else
     mkdir -p "$(dirname "${LOG_FILE}")"
-    python3 bot.py &>"${LOG_FILE}"
+    ./venv/bin/python bot.py &>"${LOG_FILE}"
 fi

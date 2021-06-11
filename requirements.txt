@@ -1,6 +1,6 @@
 docker~=5.0.0
-requests~=2.25.0
+requests~=2.25.1
 paramiko~=2.7.2
-pytelegrambotapi~=3.7.4
-peewee~=3.14.0
+pytelegrambotapi~=3.7.9
+peewee~=3.14.4
 emoji~=1.2.0

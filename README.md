@@ -8,13 +8,34 @@ run them on different OS.
 ### Prepare
 
 1. Install Python 3.6 or higher;
-2. Install Docker or/and VirtualBox;
-3. Change `config.json` if necessary (e.g. to add TG token).
+2. Make Python virtual environment and install Python libraries:
 
-### Run
+```shell
+python3 -m venv venv
+venv/bin/pip install --upgrade pip
+venv/bin/pip install -r requirements.txt
+```
+
+3. Install Docker or/and VirtualBox;
+4. Import necessary VMs in VirtualBox;
+5. Copy `config-example.json` to `config.json` and change it if necessary
+   (e.g. to add TG token), full config you can see
+   [below](#config-with-all-available-options).
+
+### Manually run
 
 1. Run `run_check.py` to check installation;
 2. Run `run_bot.py` to run Telegram bot.
+
+### Telegram bot service
+
+To manage Telegram bot service, you can use [service.sh](/service.sh) script. It
+has `install`, `start`, `stop` and `uninstall` commands. For example, to install
+service, just run this command:
+
+```shell
+./service.sh install
+```
 
 ### Configure automatic runs
 
@@ -26,8 +47,6 @@ crontab -e
 # 0 9,19 * * * /bin/bash ${DELIVERY_CHECKER_WORKDIR}/run_check.sh -f
 # TG bot sometimes freezes, so you can add this (replace bot name with yours):
 # */15 * * * * sudo systemctl restart ${DELIVERY_CHECKER_BOT_NAME}
-# OR
-# */15 * * * * sudo launchctl restart ${DELIVERY_CHECKER_BOT_NAME}
 ```
 
 ## Config with all available options
