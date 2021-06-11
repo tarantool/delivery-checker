@@ -25,10 +25,9 @@ if [ -n "${FILE_MODE}" ] && [ -z "${LOG_FILE}" ]; then
 fi
 
 cd "$(dirname "$0")"
-source venv/bin/activate
 if [ -z "${LOG_FILE}" ]; then
-    python3 check.py -v
+    ./venv/bin/python check.py -v
 else
     mkdir -p "$(dirname "${LOG_FILE}")"
-    python3 check.py &>"${LOG_FILE}"
+    ./venv/bin/python check.py &>"${LOG_FILE}"
 fi

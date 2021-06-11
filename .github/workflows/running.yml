@@ -14,7 +14,6 @@ jobs:
           privateKey: ${{ secrets.SSH_KEY }}
           command: |
             cd ${{ secrets.REMOTE_PATH }}
-            source venv/bin/activate
             ./run_check.sh
             export EXIT_CODE=$?
             sudo chown -R ${{ secrets.USERNAME }}:${{ secrets.USERNAME }} local

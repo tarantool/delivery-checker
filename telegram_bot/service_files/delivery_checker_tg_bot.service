@@ -1,0 +1,12 @@
+[Unit]
+Description=Delivery Checker Telegram Bot
+After=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+WorkingDirectory=WORK_DIR
+ExecStart=/bin/bash WORK_DIR/run_bot.sh
+
+[Install]
+WantedBy=multi-user.target
