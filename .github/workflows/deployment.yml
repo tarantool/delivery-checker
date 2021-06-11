@@ -2,12 +2,19 @@ name: Deployment
 on:
   workflow_dispatch:
   push:
-    branches: [ 'master' ]
+    branches: ['master']
 jobs:
   deployment:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@master
+      - name: Uninstall bot service
+        uses: garygrossgarten/github-action-ssh@release
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          privateKey: ${{ secrets.SSH_KEY }}
+          command: ./service.sh uninstall
       - name: Clear old files
         uses: garygrossgarten/github-action-ssh@release
         with:
@@ -40,9 +47,8 @@ jobs:
             cd ${{ secrets.REMOTE_PATH }}
             git reset --hard
             python3 -m venv venv
-            source venv/bin/activate
-            pip install --upgrade pip
-            pip install -r requirements.txt
+            venv/bin/pip install --upgrade pip
+            venv/bin/pip install -r requirements.txt
       - name: Check config
         uses: garygrossgarten/github-action-ssh@release
         with:
@@ -52,20 +58,10 @@ jobs:
           command: |
             cd ${{ secrets.REMOTE_PATH }}
             ls config.json || cp config-example.json config.json
-      - name: Restart bot service
+      - name: Install bot service
         uses: garygrossgarten/github-action-ssh@release
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           privateKey: ${{ secrets.SSH_KEY }}
-          command: |
-            if [ -n "${{ secrets.TG_BOT_NAME }}" ]; then
-              if [ "$(uname -s)" -eq "Linux" ]; then
-                echo "Restarting '${{ secrets.TG_BOT_NAME }}' service"
-                sudo systemctl restart ${{ secrets.TG_BOT_NAME }}
-              fi
-              if [ "$(uname -s)" -eq "Darwin" ]; then
-                echo "Restarting '${{ secrets.TG_BOT_NAME }}' Launch Agent"
-                sudo launchctl restart ${{ secrets.TG_BOT_NAME }}
-              fi
-            fi
+          command: ./service.sh install
