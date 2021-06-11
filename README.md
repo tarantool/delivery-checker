@@ -9,12 +9,26 @@ run them on different OS.
 
 1. Install Python 3.6 or higher;
 2. Install Docker or/and VirtualBox;
-3. Change `config.json` if necessary.
+3. Change `config.json` if necessary (e.g. to add TG token).
 
 ### Run
 
 1. Run `run_check.py` to check installation;
 2. Run `run_bot.py` to run Telegram bot.
+
+### Configure automatic runs
+
+To run checks and bot automatically, you can use cron like this:
+
+```shell
+crontab -e
+# Put this to crontab config (replace working directory with yours):
+# 0 9,19 * * * /bin/bash ${DELIVERY_CHECKER_WORKDIR}/run_check.sh -f
+# TG bot sometimes freezes, so you can add this (replace bot name with yours):
+# */15 * * * * sudo systemctl restart ${DELIVERY_CHECKER_BOT_NAME}
+# OR
+# */15 * * * * sudo launchctl restart ${DELIVERY_CHECKER_BOT_NAME}
+```
 
 ## Config with all available options
 
