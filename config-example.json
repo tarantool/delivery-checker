@@ -8,15 +8,6 @@
         ]
       }
     },
-    "rhel-centos": {
-      "docker": {
-        "image": "centos",
-        "versions": [
-          "7",
-          "8"
-        ]
-      }
-    },
     "debian": {
       "docker": {
         "versions": [
@@ -32,8 +23,12 @@
     "fedora": {
       "docker": {
         "versions": [
+          "28",
+          "29",
+          "30",
           "31",
-          "32"
+          "32",
+          "33"
         ]
       }
     },
@@ -46,30 +41,59 @@
         }
       }
     },
+    "opensuse": {
+      "docker": {
+        "image": "opensuse/leap",
+        "versions": [
+          "15.1",
+          "15.2"
+        ]
+      }
+    },
     "os-x": {
       "virtual_box": {
-        "os-x_10.12": {
+        "os-x_10.14": {
           "login": "osx",
           "password": "osx",
-          "port": 10024,
+          "port": 10026,
           "remote_dir": "/Users/osx/tarantool",
           "prepare_timeout": 2700,
           "run_timeout": 900
         },
-        "os-x_10.13": {
+        "os-x_10.15": {
           "login": "osx",
           "password": "osx",
-          "port": 10025,
+          "port": 10027,
+          "remote_dir": "/Users/osx/tarantool",
+          "prepare_timeout": 2700,
+          "run_timeout": 900
+        },
+        "os-x_11.0": {
+          "login": "osx",
+          "password": "osx",
+          "port": 10028,
           "remote_dir": "/Users/osx/tarantool",
           "prepare_timeout": 2700,
           "run_timeout": 900
         }
       }
     },
+    "rhel-centos": {
+      "docker": {
+        "image": "centos",
+        "versions": [
+          "7",
+          "8"
+        ]
+      }
+    },
     "ubuntu": {
       "docker": {
         "versions": [
-          "18.04"
+          "14.04",
+          "16.04",
+          "18.04",
+          "20.04"
         ]
       }
     }
