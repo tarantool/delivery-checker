@@ -13,9 +13,10 @@ Credentials = namedtuple(
 
 
 class SshClient:
-    def __init__(self, credentials: Credentials, log_func=print):
+    def __init__(self, credentials: Credentials, log_func=print, shell_path='/bin/sh'):
         self.log = log_func
         self.credentials = credentials
+        self.shell_path = shell_path
         self.__ssh = None
         self.__sftp = None
 
@@ -97,7 +98,8 @@ class SshClient:
             channel.settimeout(timeout)
 
             print_logs(in_data=command, log=self.log)
-            channel.exec_command(command)
+            command = command.replace('\\', '\\\\').replace('"', '\\"')
+            channel.exec_command(f'{self.shell_path} -c "{command}"')
             if input_data is not None:
                 channel.send(input_data)
 
@@ -112,7 +114,7 @@ class SshClient:
         good_errors = good_errors or []
 
         for command in commands:
-            output = self.exec_ssh_command(command, timeout)
+            output = self.exec_ssh_command(command, timeout=timeout)
             if output is not None:
                 output_lower = output.lower()
 
