@@ -63,8 +63,8 @@ OS: freebsd_12.2. Build: pkg_2.4. Elapsed time: 95.85. OK
 OS: freebsd_12.2. Build: ports_2.4. Elapsed time: 355.99. TIMEOUT
 OS: amazon-linux_2. Build: script_2.5. Elapsed time: 85.43. ERROR
 OS: amazon-linux_2. Build: script_1.10. Elapsed time: 88.83. ERROR
-OS: os-x_10.12. Build: 2.5. SKIP
-OS: os-x_10.12. Build: 2.6. Elapsed time: 521.86. OK
+OS: mac-os_11.0. Build: 2.5. SKIP
+OS: mac-os_11.0. Build: 2.6. Elapsed time: 521.86. OK
 OS: docker-hub_2.5. Build: 2.5. Elapsed time: 122.72. OK
 ```
 
