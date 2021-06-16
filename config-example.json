@@ -52,27 +52,30 @@
     },
     "os-x": {
       "virtual_box": {
-        "os-x_10.14": {
-          "login": "osx",
-          "password": "osx",
+        "mac-os_10.14": {
+          "login": "checker",
+          "password": "checker",
           "port": 10026,
-          "remote_dir": "/Users/osx/tarantool",
+          "remote_dir": "/Users/checker/tarantool",
+          "shell_path": "/bin/bash",
           "prepare_timeout": 2700,
           "run_timeout": 900
         },
-        "os-x_10.15": {
-          "login": "osx",
-          "password": "osx",
+        "mac-os_10.15": {
+          "login": "checker",
+          "password": "checker",
           "port": 10027,
-          "remote_dir": "/Users/osx/tarantool",
+          "remote_dir": "/Users/checker/tarantool",
+          "shell_path": "/bin/bash",
           "prepare_timeout": 2700,
           "run_timeout": 900
         },
-        "os-x_11.0": {
-          "login": "osx",
-          "password": "osx",
+        "mac-os_11.0": {
+          "login": "checker",
+          "password": "checker",
           "port": 10028,
-          "remote_dir": "/Users/osx/tarantool",
+          "remote_dir": "/Users/checker/tarantool",
+          "shell_path": "/bin/bash",
           "prepare_timeout": 2700,
           "run_timeout": 900
         }

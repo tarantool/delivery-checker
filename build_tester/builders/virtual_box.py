@@ -11,7 +11,7 @@ from build_tester.helpers.ssh import Credentials, SshClient
 VirtualBoxInfo = namedtuple(
     typename='VirtualBoxInfo',
     field_names=(
-        'os_name', 'build_name', 'vm_name', 'credentials', 'remote_dir',
+        'os_name', 'build_name', 'vm_name', 'credentials', 'remote_dir', 'shell_path',
         'skip_prepare', 'prepare_timeout', 'run_timeout', 'skip',
     ),
 )
@@ -34,7 +34,11 @@ class VirtualBoxBuilder:
         self.log = log_func
 
         self.__shell_client = ShellClient(log_func=log_func)
-        self.__ssh_client = SshClient(self.build_info.credentials, log_func=self.log)
+        self.__ssh_client = SshClient(
+            self.build_info.credentials,
+            log_func=self.log,
+            shell_path=self.build_info.shell_path,
+        )
 
     @staticmethod
     def get_builds(config, os_name, build_name):
@@ -54,6 +58,7 @@ class VirtualBoxBuilder:
                     port=vm_params[1].get('port', 10022),
                 ),
                 remote_dir=vm_params[1].get('remote_dir', '/opt/tarantool'),
+                shell_path=vm_params[1].get('shell_path', '/bin/sh'),
                 skip_prepare=vm_params[1].get('skip_prepare'),
                 prepare_timeout=vm_params[1].get('prepare_timeout'),
                 run_timeout=vm_params[1].get('run_timeout'),
