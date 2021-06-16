@@ -18,7 +18,7 @@ if [ "$(uname -s)" = "Linux" ]; then
     if [ "${COMMAND}" = "install" ]; then
         if [ -f "/etc/systemd/system/${SRV_NAME}.service" ]; then
             echo "The service is already installed!"
-            exit 1
+            exit 0
         fi
 
         awk """{gsub(/WORK_DIR/, \"$(pwd)\")}1""" "${SERVICE_FILE}" >"${TMP_SERVICE_FILE}"
@@ -33,8 +33,8 @@ if [ "$(uname -s)" = "Linux" ]; then
 
     elif [ "${COMMAND}" = "uninstall" ]; then
         if [ ! -f "/etc/systemd/system/${SRV_NAME}.service" ]; then
-            echo "Service not installed!"
-            exit 1
+            echo "The service is already uninstalled!"
+            exit 0
         fi
 
         echo "Stopping '${SRV_NAME}' service"
@@ -47,7 +47,7 @@ if [ "$(uname -s)" = "Linux" ]; then
 
     else
         if [ ! -f "/etc/systemd/system/${SRV_NAME}.service" ]; then
-            echo "Service not installed!"
+            echo "The service not installed!"
             exit 1
         fi
 
@@ -67,7 +67,7 @@ if [ "$(uname -s)" = "Darwin" ]; then
     if [ "${COMMAND}" = "install" ]; then
         if [ -f "${LAUNCH_DIR}/${SRV_NAME}.plist" ]; then
             echo "The service is already installed!"
-            exit 1
+            exit 0
         fi
 
         awk """{gsub(/WORK_DIR/, \"$(pwd)\")}1""" "${SERVICE_FILE}" >"${TMP_SERVICE_FILE}.1"
@@ -85,8 +85,8 @@ if [ "$(uname -s)" = "Darwin" ]; then
 
     elif [ "${COMMAND}" = "uninstall" ]; then
         if [ ! -f "${LAUNCH_DIR}/${SRV_NAME}.plist" ]; then
-            echo "Service not installed!"
-            exit 1
+            echo "Service is already uninstalled!"
+            exit 0
         fi
 
         echo "Stopping '${SRV_NAME}' service"
@@ -98,7 +98,7 @@ if [ "$(uname -s)" = "Darwin" ]; then
 
     else
         if [ ! -f "${LAUNCH_DIR}/${SRV_NAME}.plist" ]; then
-            echo "Service not installed!"
+            echo "The service not installed!"
             exit 1
         fi
 
