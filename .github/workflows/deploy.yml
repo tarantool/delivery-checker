@@ -1,10 +1,10 @@
-name: Deployment
+name: Deploy
 on:
   workflow_dispatch:
   push:
     branches: ['master']
 jobs:
-  deployment:
+  deploy_code:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@master
@@ -16,7 +16,7 @@ jobs:
           privateKey: ${{ secrets.SSH_KEY }}
           command: |
             cd ${{ secrets.REMOTE_PATH }}
-            ./service.sh uninstall || true
+            test -f service.sh && ./service.sh uninstall
       - name: Clear old files
         uses: garygrossgarten/github-action-ssh@release
         with:
