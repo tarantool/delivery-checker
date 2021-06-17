@@ -14,6 +14,8 @@ from telegram_bot.db import DB, SubscribeType
 logger = logging.getLogger('Bot')
 
 UNSUBSCRIBE_ERRORS = ['blocked', 'rights', 'kicked', 'not a member']
+MAX_BUTTONS_COUNT = 60
+MAX_MESSAGE_LENGTH = 4096
 
 
 class Bot:
@@ -285,12 +287,71 @@ class Bot:
         keyboard.add(show_logs, show_tests)
         return keyboard
 
+    @staticmethod
+    def __split_message(text):
+        messages = []
+        begin = 0
+        if text[-1] != '\n':
+            text += '\n'
+
+        while begin < len(text):
+            i = 0
+            max_len = min(MAX_MESSAGE_LENGTH - 1, len(text) - begin - 1)
+            for i in range(max_len, -1, -1):
+                if text[begin + i] == '\n':
+                    break
+            if i == 0:
+                i = max_len
+            i += 1
+            messages.append(text[begin:begin + i])
+            begin += i
+
+        return messages
+
+    @staticmethod
+    def __split_reply_markup(reply_markup):
+        if not reply_markup:
+            return [None]
+
+        reply_markups = []
+        if isinstance(reply_markup, types.InlineKeyboardMarkup):
+            for i in range(0, len(reply_markup.keyboard), MAX_BUTTONS_COUNT):
+                reply_markups.append(types.InlineKeyboardMarkup(
+                    keyboard=reply_markup.keyboard[i:i + MAX_BUTTONS_COUNT],
+                    row_width=reply_markup.row_width,
+                ))
+        else:
+            reply_markups.append(reply_markup)
+
+        return reply_markups
+
+    def __send_message(self, chat_id, text, **kwargs):
+        reply_markups = self.__split_reply_markup(kwargs.get('reply_markup'))
+        kwargs['reply_markup'] = None
+
+        messages = self.__split_message(text)
+
+        if len(messages) > 1:
+            self.__bot.send_message(chat_id, messages[0], **kwargs)
+            kwargs['reply_to_message_id'] = None
+
+        for i in range(1, len(messages) - 1):
+            self.__bot.send_message(chat_id, messages[i], **kwargs)
+
+        kwargs['reply_markup'] = reply_markups[0]
+        self.__bot.send_message(chat_id, messages[-1], **kwargs)
+
+        last_line = messages[-1].strip('\n').split('\n')[-1]
+        for i in range(1, len(reply_markups)):
+            kwargs['reply_markup'] = reply_markups[i]
+            self.__bot.send_message(chat_id, f'Page #{i + 1}. {last_line}', **kwargs)
+
     #########################
     # Commands
     #########################
 
     def __show_info(self, message):
-        self.__bot.send_message(message.chat.id, text=textwrap.dedent('''
+        self.__send_message(chat_id=message.chat.id, text=textwrap.dedent('''
             Hello!
             This is a bot that sends out the results of Tarantool builds.
             To manage your notifications subscription use:
@@ -305,8 +366,8 @@ class Bot:
             return
 
         self.__db.subscribe(message.chat.id, SubscribeType.ALL)
-        self.__bot.send_message(
-            message.chat.id,
+        self.__send_message(
+            chat_id=message.chat.id,
             text='You are successfully *subscribed* for *all* build checks notifications!',
             parse_mode='Markdown',
         )
@@ -316,8 +377,8 @@ class Bot:
             return
 
         self.__db.subscribe(message.chat.id, SubscribeType.FAILED)
-        self.__bot.send_message(
-            message.chat.id,
+        self.__send_message(
+            chat_id=message.chat.id,
             text='You are successfully *subscribed* for *failed* build checks notifications!',
             parse_mode='Markdown',
         )
@@ -327,8 +388,8 @@ class Bot:
             return
 
         self.__db.unsubscribe(message.chat.id)
-        self.__bot.send_message(
-            message.chat.id,
+        self.__send_message(
+            chat_id=message.chat.id,
             text='You are successfully *unsubscribed* from build checks notifications!',
             parse_mode='Markdown',
         )
@@ -352,10 +413,10 @@ class Bot:
             pages_prefix='results_list;',
         )
         if keyboard is None:
-            self.__bot.send_message(user_id, f'No results!')
+            self.__send_message(chat_id=user_id, text=f'No results!')
             return
 
-        self.__bot.send_message(
+        self.__send_message(
             chat_id=user_id,
             text=f'To show a specific page use `/show_results <page>`\n\nSelect date:',
             reply_markup=keyboard,
@@ -397,7 +458,7 @@ class Bot:
             message = self.__get_results_message(results, only_failed=only_failed)
             if message:
                 prefix = 'Failed' if only_failed else 'All'
-                self.__bot.send_message(
+                self.__send_message(
                     chat_id=call.from_user.id,
                     text=f'{prefix} results from {self.__dir_name_to_date(dir_name)}:\n\n{message}',
                     reply_markup=keyboard,
@@ -405,7 +466,7 @@ class Bot:
                 )
             else:
                 prefix = 'failed' if only_failed else ''
-                self.__bot.send_message(
+                self.__send_message(
                     chat_id=call.from_user.id,
                     text=f'No {prefix} results from {self.__dir_name_to_date(dir_name)}!',
                     reply_markup=keyboard,
@@ -455,7 +516,7 @@ class Bot:
         else:
             text = f'No {type_name}s for failed builds!'
 
-        self.__bot.send_message(call.from_user.id, text, reply_markup=keyboard)
+        self.__send_message(chat_id=call.from_user.id, text=text, reply_markup=keyboard)
 
     #########################
     # Logs
@@ -508,13 +569,13 @@ class Bot:
                 message += f'- {test_name}: {result}\n'
 
             os_name, build_name = self.__file_name_to_os_build(test_file)
-            self.__bot.send_message(
-                call.from_user.id,
-                f'OS: {os_name}\n'
-                f'Build Name: {build_name}\n'
-                f'Time: {self.__dir_name_to_date(dir_name)}\n\n'
-                f'Tests results:\n'
-                f'{message}',
+            self.__send_message(
+                chat_id=call.from_user.id,
+                text=f'OS: {os_name}\n'
+                     f'Build Name: {build_name}\n'
+                     f'Time: {self.__dir_name_to_date(dir_name)}\n\n'
+                     f'Tests results:\n'
+                     f'{message}',
             )
 
     #########################
@@ -523,7 +584,7 @@ class Bot:
 
     def __send_message_to_subscriber(self, chat_id, *args, **kwargs):
         try:
-            return self.__bot.send_message(chat_id, *args, **kwargs)
+            return self.__send_message(chat_id, *args, **kwargs)
         except ApiTelegramException as e:
             logger.error(e)
             if any(map(
