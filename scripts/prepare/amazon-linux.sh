@@ -6,4 +6,5 @@ set -ex
 # Preparation commands
 
 # To download and execute tarantool install script
+yum -y upgrade
 yum -y install sudo

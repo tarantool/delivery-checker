@@ -6,6 +6,5 @@ set -ex
 # Preparation commands
 
 # To download and execute tarantool install script
-apt-get -y update
-apt-get -y upgrade
-apt-get -y install curl sudo
+dnf -y upgrade
+dnf -y install sudo
