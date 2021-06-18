@@ -10,5 +10,6 @@ set -ex
 ln -snf "/usr/share/zoneinfo/${TZ}" "/etc/localtime" && echo "${TZ}" >"/etc/timezone"
 
 # To download and execute tarantool install script
-apt-get update
+apt-get -y update
+apt-get -y upgrade
 apt-get -y install curl sudo
