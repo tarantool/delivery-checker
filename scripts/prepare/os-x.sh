@@ -5,6 +5,9 @@ set -ex
 
 # Preparation commands
 
+# Update software
+softwareupdate --all --install --force
+
 # Download dependencies to cache it
 brew install --only-dependencies tarantool
 brew install --only-dependencies tarantool --HEAD
