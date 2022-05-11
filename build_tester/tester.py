@@ -26,6 +26,8 @@ class Tester:
 
     def __parse_config(self, config):
         self.commands_url = config.get('commands_url', 'https://www.tarantool.io/api/tarantool/info/versions/')
+        self.commands_url_user = config.get('commands_url_user')
+        self.commands_url_pass = config.get('commands_url_pass')
 
         self.__scripts_dir_path = config.get('scripts_dir_path', './scripts')
 
@@ -89,7 +91,32 @@ class Tester:
         return os_name
 
     def __download_scripts(self):
-        site_commands = requests.get(self.commands_url).json()
+        commands_response: requests.Response
+
+        auth_user = self.commands_url_user
+        auth_pass = self.commands_url_pass
+        url = self.commands_url
+
+        if auth_user and auth_pass:
+            commands_response = requests.get(url, auth=(auth_user, auth_pass))
+        elif auth_user or auth_pass:
+            print(f'provide both user and password for basic auth;'
+                  f' commands_url_user:"{auth_user}", commands_url_pass:"{auth_pass}"')
+            exit(1)
+        else:
+            commands_response = requests.get(url)
+
+        if commands_response.status_code == 401:
+            print(f'authentication error at commands_url: "{url}"'
+                  f' with commands_url_user: "{auth_user}" and commands_url_pass: "{auth_pass}"')
+            exit(1)
+
+        try:
+            site_commands = commands_response.json()
+        except json.decoder.JSONDecodeError as err:
+            print(f'site response unreadable: {err}')
+        except Exception as err:
+            print(f'unknown error when parsing site response: {err}')
 
         # Remove old scripts
         for file in os.listdir(self.__install_dir_path):
