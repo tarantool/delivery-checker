@@ -40,6 +40,30 @@ venv/bin/pip install -r requirements.txt
 1. Run `check.py` to check installation;
 2. Run `bot.py` to run the Telegram bot.
 
+### Checking a development server
+
+Delivery checker gets configurations and commands from a server in the form of a JSON.
+The source URL is set in the config.json file:
+
+```json
+  "commands_url": "https://www.tarantool.io/api/tarantool/info/versions/",
+```
+
+Delivery checker can run against a development server or even localhost.
+Just change the URL:
+
+```json
+  "commands_url": "http://localhost/api/tarantool/info/versions/",
+```
+
+For development servers, also provide user and password for basic authentication:
+
+```json
+  "commands_url": "https://devx1.d.tarantool.io/api/tarantool/info/versions/",
+  "commands_url_user": "user",
+  "commands_url_pass": "pass",
+```
+
 ### Telegram bot service
 
 To manage Telegram bot service, you can use [service.sh](/service.sh) script. It
