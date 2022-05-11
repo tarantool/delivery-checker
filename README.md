@@ -3,9 +3,22 @@
 This is a program that downloads Tarantool's installation commands and tries to
 run them on different OS.
 
-## How to run
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-### Prepare
+- [Running Delivery Checker](#running-delivery-checker)
+  - [Setting up the environment](#setting-up-the-environment)
+  - [Running manually](#running-manually)
+  - [Telegram bot service](#telegram-bot-service)
+  - [Configuring automatic runs](#configuring-automatic-runs)
+- [Configuration options](#configuration-options)
+- [Example of output](#example-of-output)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Running Delivery Checker
+
+### Setting up the environment
 
 1. Install Python 3.6 or higher;
 2. Make Python virtual environment and install Python libraries:
@@ -20,12 +33,12 @@ venv/bin/pip install -r requirements.txt
 4. Import necessary VMs in VirtualBox;
 5. Copy `config-example.json` to `config.json` and change it if necessary
    (e.g. to add TG token), full config you can see
-   [below](#config-with-all-available-options).
+   [below](#configuration-options).
 
-### Manually run
+### Running manually
 
-1. Run `run_check.py` to check installation;
-2. Run `run_bot.py` to run Telegram bot.
+1. Run `check.py` to check installation;
+2. Run `bot.py` to run the Telegram bot.
 
 ### Telegram bot service
 
@@ -37,7 +50,10 @@ service, just run this command:
 ./service.sh install
 ```
 
-### Configure automatic runs
+### Configuring automatic runs
+
+Scripts `run_check.sh` and `run_bot.sh` provide some run options and log management.
+They're intended to be used for "production" runs.
 
 To run checks and bot automatically, you can use cron like this:
 
@@ -49,7 +65,7 @@ crontab -e
 # */15 * * * * sudo systemctl restart ${DELIVERY_CHECKER_BOT_NAME}
 ```
 
-## Config with all available options
+## Configuration options
 
 You can find all available config options in
 file [config-full.json](/config-full.json).
