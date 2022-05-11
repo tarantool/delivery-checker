@@ -20,6 +20,8 @@
   "results_file_name": "results.json",
 
   "commands_url": "https://www.tarantool.io/api/tarantool/info/versions/",
+  "commands_url_user": "user",
+  "commands_url_pass": "pass",
   "send_to_remote": {
     "login": "centos",
     "password": "centos",
