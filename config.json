@@ -1,0 +1,64 @@
+{
+  "commands_url": "https://devx1.d.tarantool.io/api/tarantool/info/versions/",
+  "commands_url_user": "dev-user",
+  "commands_url_pass": "tarantool",
+  "os_params": {
+    "amazon-linux": {
+      "docker": {
+        "image": "amazonlinux",
+        "versions": [
+          "2"
+        ]
+      }
+    },
+    "debian": {
+      "docker": {
+        "versions": [
+          "stretch",
+          "buster",
+          "bullseye"
+        ]
+      }
+    },
+    "docker-hub": {
+      "docker": {}
+    },
+    "fedora": {
+      "docker": {
+        "versions": [
+          "34",
+          "35",
+          "36"
+        ]
+      }
+    },
+    "opensuse": {
+      "docker": {
+        "image": "opensuse/leap",
+        "versions": [
+          "15.2"
+        ]
+      }
+    },
+    "rhel-centos": {
+      "docker": {
+        "image": "centos",
+        "versions": [
+          "7",
+          "8"
+        ]
+      }
+    },
+    "ubuntu": {
+      "docker": {
+        "versions": [
+          "20.04",
+          "20.10",
+          "21.04",
+          "21.10",
+          "22.04"
+        ]
+      }
+    }
+  }
+}
