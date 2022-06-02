@@ -4,3 +4,4 @@ paramiko~=2.7.2
 pytelegrambotapi~=3.7.9
 peewee~=3.14.4
 emoji~=1.2.0
+six==1.15.0
