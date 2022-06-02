@@ -39,18 +39,23 @@ class DockerBuilder:
         params = config.get(os_name)
         if params is None:
             return []
+        build_list = []
+        for version in params.get('versions', ['latest']):
+            skip = False
+            if params.get("skip_os_versions"):
+                for tnt_version in params["skip_os_versions"].get(version, []):
+                    if build_name.endswith(tnt_version):
+                        skip = True
 
-        return list(map(
-            lambda version: DockerInfo(
+            build_list.append(DockerInfo(
                 os_name=os_name,
                 build_name=build_name,
                 image=params.get('image', os_name),
                 image_version=version,
-                skip=build_name in params.get('skip', []),
+                skip=build_name in params.get('skip', []) or skip,
                 use_cache=params.get('use_cache', default_use_cache),
-            ),
-            params.get('versions', ['latest']),
-        ))
+            ))
+        return build_list
 
     @staticmethod
     def get_docker_builds(config, os_name, build_name, commands, default_use_cache=False):
