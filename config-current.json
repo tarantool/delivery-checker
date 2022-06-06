@@ -1,0 +1,108 @@
+{
+  "telegram_token": "1435362785:AAGCqqQLgwnZik-uENrJ-rf4pWoLJsPfpQA",
+  "os_params": {
+    "amazon-linux": {
+      "docker": {
+        "image": "amazonlinux",
+        "versions": [
+          "2"
+        ]
+      }
+    },
+    "debian": {
+      "docker": {
+        "versions": [
+          "stretch",
+          "buster",
+          "bullseye"
+        ]
+      }
+    },
+    "docker-hub": {
+      "docker": {}
+    },
+    "fedora": {
+      "docker": {
+        "versions": [
+          "30",
+          "31",
+          "32",
+          "33",
+          "34",
+          "35",
+          "36"
+        ]
+      }
+    },
+    "freebsd": {
+      "virtual_box": {
+        "freebsd_12.3": {
+          "port": 10023,
+          "prepare_timeout": 2700,
+          "run_timeout": 900
+        }
+      }
+    },
+    "opensuse": {
+      "docker": {
+        "image": "opensuse/leap",
+        "versions": [
+          "15.1",
+          "15.2"
+        ]
+      }
+    },
+    "os-x": {
+      "virtual_box": {
+        "mac-os_10.14": {
+          "login": "checker",
+          "password": "checker",
+          "port": 10026,
+          "remote_dir": "/Users/checker/tarantool",
+          "shell_path": "/bin/bash",
+          "prepare_timeout": 2700,
+          "run_timeout": 900
+        },
+        "mac-os_10.15": {
+          "login": "checker",
+          "password": "checker",
+          "port": 10027,
+          "remote_dir": "/Users/checker/tarantool",
+          "shell_path": "/bin/bash",
+          "prepare_timeout": 2700,
+          "run_timeout": 900
+        },
+        "mac-os_11.0": {
+          "login": "checker",
+          "password": "checker",
+          "port": 10028,
+          "remote_dir": "/Users/checker/tarantool",
+          "shell_path": "/bin/bash",
+          "prepare_timeout": 2700,
+          "run_timeout": 900
+        }
+      }
+    },
+    "rhel-centos": {
+      "docker": {
+        "image": "centos",
+        "versions": [
+          "7",
+          "8"
+        ]
+      }
+    },
+    "ubuntu": {
+      "docker": {
+        "versions": [
+          "16.04",
+          "18.04",
+          "20.04",
+          "21.04",
+          "21.10",
+          "22.04"
+        ]
+      }
+    }
+  }
+}
