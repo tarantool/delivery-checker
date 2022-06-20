@@ -9,6 +9,7 @@ from enum import Enum
 
 from build_tester.helpers.ssh import SshClient, Credentials
 from build_tester.helpers.zip import Zip
+from config.config import CheckerConfig
 
 RemoteInfo = namedtuple(
     typename='RemoteInfo',
@@ -44,34 +45,27 @@ SUCCESS_RESULTS = [
 
 
 class ResultsManager:
-    def __init__(self, config, log_func=print):
-        self.__parse_config(config)
+    def __init__(self, config: CheckerConfig, log_func=print):
+        self.config = config
+        self.__parse_config()
 
         self.log = log_func
 
         self.__zip = Zip()
 
-    def __parse_config(self, config):
-        self.__local_dir_path = config.get('local_dir_path', './local')
-        self.__remote_dir_path = config.get('remote_dir_path', './remote')
-        self.__archive_dir_path = config.get('archive_dir_path', './archive')
-
-        self.__logs_dir_name = config.get('logs_dir_name', 'logs')
-        self.__tests_dir_name = config.get('tests_dir_name', 'tests')
-
-        self.__results_file_name = config.get('results_file_name', 'results.json')
-        self.__results_file_path = os.path.join(self.__local_dir_path, self.__results_file_name)
-
+    def __parse_config(self):
+        config = self.config
         self.__send_to_remote = None
-        if config.get('send_to_remote') is not None:
-            login = config['send_to_remote'].get('login')
+
+        if config.send_to_remote:
+            login = config.send_to_remote.get('login')
             assert login is not None, 'Login is required in send_to_remote section'
-            password = config['send_to_remote'].get('password')
+            password = config.send_to_remote.get('password')
             assert password is not None, 'Password is required in send_to_remote section'
-            host = config['send_to_remote'].get('host')
+            host = config.send_to_remote.get('host')
             assert host is not None, 'Host is required in send_to_remote section'
 
-            archive = config['send_to_remote'].get('archive')
+            archive = config.send_to_remote.get('archive')
             assert archive is not None, 'Archive name is required in send_to_remote section'
 
             self.__send_to_remote = RemoteInfo(
@@ -79,13 +73,11 @@ class ResultsManager:
                     login=login,
                     password=password,
                     host=host,
-                    port=config['send_to_remote'].get('port', 22),
+                    port=config.send_to_remote.get('port', 22),
                 ),
                 archive=archive,
-                remote_dir=config['send_to_remote'].get('remote_dir', '/opt/delivery_checker/remote')
+                remote_dir=config.send_to_remote.get('remote_dir', '/opt/delivery_checker/remote')
             )
-
-        self.__load_remote_cache = config.get('use_remote_results', False)
 
     def send_results(self, timeout=3 * 60):
         if self.__send_to_remote is None:
@@ -95,8 +87,8 @@ class ResultsManager:
 
         try:
             self.__zip.zip_path(
-                path=self.__local_dir_path,
-                rel_dir=self.__local_dir_path,
+                path=self.config.local_dir_path,
+                rel_dir=self.config.local_dir_path,
                 zip_name=zip_name,
             )
 
@@ -117,7 +109,7 @@ class ResultsManager:
         return False
 
     def __merge_results(self, remote_path):
-        with open(self.__results_file_path, mode='r') as fs:
+        with open(self.config.results_file_path, mode='r') as fs:
             local_results = json.load(fs)
 
         with open(remote_path, mode='r') as fs:
@@ -130,37 +122,36 @@ class ResultsManager:
                 if RESULTS_PRIORITY[remote_result] >= RESULTS_PRIORITY[local_result]:
                     local_results[os_name][build_name] = remote_result
 
-        with open(self.__results_file_path, mode='w') as fs:
+        with open(self.config.results_file_path, mode='w') as fs:
             fs.write(json.dumps(local_results))
 
     def use_remote_results(self, temp_dir='./temp'):
-        if not self.__load_remote_cache:
-            return
 
-        for archive in glob.glob(os.path.join(self.__remote_dir_path, '*.zip')):
+
+        for archive in glob.glob(os.path.join(self.config.remote_dir_path, '*.zip')):
             with zipfile.ZipFile(archive, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
 
-            for root, _, files in os.walk(os.path.join(temp_dir, self.__logs_dir_name)):
+            for root, _, files in os.walk(os.path.join(temp_dir, self.config.logs_dir_name)):
                 for file in files:
                     shutil.move(
                         os.path.join(root, file),
-                        os.path.join(self.__local_dir_path, self.__logs_dir_name),
+                        os.path.join(self.config.local_dir_path, self.config.logs_dir_name),
                     )
 
-            for root, _, files in os.walk(os.path.join(temp_dir, self.__tests_dir_name)):
+            for root, _, files in os.walk(os.path.join(temp_dir, self.config.tests_dir_name)):
                 for file in files:
                     shutil.move(
                         os.path.join(root, file),
-                        os.path.join(self.__local_dir_path, self.__tests_dir_name),
+                        os.path.join(self.config.local_dir_path, self.config.tests_dir_name),
                     )
 
-            self.__merge_results(os.path.join(temp_dir, self.__results_file_name))
+            self.__merge_results(os.path.join(temp_dir, self.config.results_file_name))
 
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def find_lost_results(self, all_builds):
-        with open(self.__results_file_path, mode='r') as fs:
+        with open(self.config.results_file_path, mode='r') as fs:
             results = json.load(fs)
 
         new_results = {}
@@ -177,26 +168,27 @@ class ResultsManager:
         for os_name, builds in new_results.items():
             results[os_name] = builds
 
-        with open(self.__results_file_path, mode='w') as fs:
+        with open(self.config.results_file_path, mode='w') as fs:
             fs.write(json.dumps(results, sort_keys=True, indent=4))
 
     def sync_results(self, all_builds):
         self.send_results()
-        self.use_remote_results()
+        if self.config.use_remote_results:
+            self.use_remote_results()
         self.find_lost_results(all_builds)
 
     def get_results(self):
-        with open(self.__results_file_path, mode='r') as fs:
+        with open(self.config.results_file_path, mode='r') as fs:
             return json.load(fs)
 
     def archive_results(self):
-        os.makedirs(self.__archive_dir_path, exist_ok=True)
+        os.makedirs(self.config.archive_dir_path, exist_ok=True)
         dir_name = f'{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}'
-        shutil.move(self.__local_dir_path, os.path.join(self.__archive_dir_path, dir_name))
+        shutil.move(self.config.local_dir_path, os.path.join(self.config.archive_dir_path, dir_name))
         return dir_name
 
     def is_results_ok(self):
-        with open(self.__results_file_path, mode='r') as fs:
+        with open(self.config.results_file_path, mode='r') as fs:
             results = json.load(fs)
         return all(map(
             lambda builds: all(map(

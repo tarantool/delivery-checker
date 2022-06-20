@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 
 from build_tester.tester import Tester
+from config.config import CheckerConfig
 from telegram_bot.bot import Bot
 
 
@@ -20,9 +22,26 @@ def main():
         '-d', '--debug-mode', action='store_true',
         help='Use this flag to enable debug mode',
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        '--commands-url',
+        help='URL for fetching Tarantool build instructions'
+    )
+    parser.add_argument(
+        '--commands-url-user',
+        help='User for auth on the commands_url'
+    )
+    parser.add_argument(
+        '--commands-url-pass',
+        help='Password for auth on the commands_url'
+    )
+    args: argparse.Namespace = parser.parse_args()
 
-    tester = Tester(args.config, args.console_mode, args.debug_mode)
+    with open(args.config, 'r') as fs:
+        config_json = json.load(fs)
+
+    config = CheckerConfig(cli_args=args, config_json=config_json)
+
+    tester = Tester(config=config)
     tester.test_builds()
     tester.sync_results()
     is_results_ok = tester.is_results_ok()
