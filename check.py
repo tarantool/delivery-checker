@@ -23,6 +23,11 @@ def main():
         help='Use this flag to enable debug mode',
     )
     parser.add_argument(
+        '--ci-mode',
+        action='store_true',
+        help='Run a one-time test, skipping results archivation and Telegram bot'
+    )
+    parser.add_argument(
         '--version',
         help='Tarantool version, such as 1.10 or 2.10'
     )
@@ -58,6 +63,7 @@ def main():
         '--commands-url-pass',
         help='Password for auth on the commands_url'
     )
+
     args: argparse.Namespace = parser.parse_args()
 
     with open(args.config, 'r') as fs:
@@ -67,8 +73,12 @@ def main():
 
     tester = Tester(config=config)
     tester.test_builds()
-    tester.sync_results()
+    if not config.ci_mode:
+        tester.sync_results()
     is_results_ok = tester.is_results_ok()
+
+    if config.ci_mode:
+        return is_results_ok
 
     results = tester.get_results()
     dir_name = tester.archive_results()
