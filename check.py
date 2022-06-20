@@ -23,6 +23,30 @@ def main():
         help='Use this flag to enable debug mode',
     )
     parser.add_argument(
+        '--version',
+        help='Tarantool version, such as 1.10 or 2.10'
+    )
+    parser.add_argument(
+        '--build',
+        help='Tarantool build: manual, script, or nightly',
+    )
+    parser.add_argument(
+        '--dist',
+        help='OS distribution to check, one of '
+             'amazon, '
+             'centos, '
+             'debian, '
+             'fedora, '
+             'freebsd, '
+             'macos, '
+             'opensuse, or '
+             'ubuntu.'
+    )
+    parser.add_argument(
+        '--dist-version',
+        help='Exact version of the distribution to check'
+    )
+    parser.add_argument(
         '--commands-url',
         help='URL for fetching Tarantool build instructions'
     )
