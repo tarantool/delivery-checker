@@ -2,6 +2,26 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
+"""
+Matches convenient distrib names to what we use in the JSON config.
+Use for --dist resolving.
+"""
+distrib_to_json_name: dict[str, str] = {
+    'amazon': 'amazon-linux',
+    'centos': 'rhel-centos',
+    'macos': 'os-x',
+    'osx': 'os-x',
+}
+
+"""
+Nobody remembers the Debian release names
+"""
+debian_version_to_name: dict[str, str] = {
+    '11': 'bullseye',
+    '10': 'buster',
+    '9': 'stretch',
+}
+
 
 @dataclass
 class CheckerConfig:
@@ -14,6 +34,11 @@ class CheckerConfig:
     2. Configuration values in a .json configuration file.
     3. Default values.
     """
+    version: str
+    build: str
+    dist: str
+    dist_version: str
+
     console_mode: bool
     debug_mode: bool
 
@@ -48,6 +73,19 @@ class CheckerConfig:
     json: dict
 
     def __init__(self, cli_args, config_json):
+
+        self.version = cli_args.version or None
+        self.build = cli_args.build or None
+
+        assert not cli_args.dist_version or cli_args.dist, 'Argument --dist-version requires --dist'
+        self.dist = distrib_to_json_name.get(cli_args.dist, cli_args.dist)
+        if self.dist == 'debian':
+            self.dist_version = \
+                debian_version_to_name.get(cli_args.dist_version) or \
+                cli_args.dist_version or None
+        else:
+            self.dist_version = cli_args.dist_version or None
+
         self.console_mode = cli_args.console_mode
         self.debug_mode = cli_args.debug_mode
 
@@ -94,14 +132,22 @@ class CheckerConfig:
         self.docker_params = {
             k: v['docker']
             for k, v in os_params.items()
-            if v.get('docker') is not None
+            if v.get('docker') is not None and (not self.dist or self.dist == k)
         }
+        if self.dist_version:
+            assert self.dist_version in self.docker_params[self.dist]['versions'], \
+                f'version {self.dist_version} not found in the list of {self.dist} versions'
+            self.docker_params[self.dist]['versions'] = [self.dist_version]
+
         self.virtual_box_params = {
             k: v['virtual_box']
             for k, v in os_params.items()
-            if v.get('virtual_box') is not None
+            if v.get('virtual_box') is not None and (not self.dist or self.dist == k)
         }
         self.json = config_json
+
+        if self.debug_mode:
+            print(self)
 
     def __str__(self):
         return ''.join([f'{k}: {v}\n' for k, v in self.__dict__.items()])

@@ -86,12 +86,16 @@ class Tester:
         builds = []
         for os_name, versions in site_commands.items():
             for build_name, commands in versions.items():
+                if self.config.build and self.config.build not in build_name:
+                    continue
+                if self.config.version and self.config.version not in build_name:
+                    continue
+
                 # Remove os name from build name (ubuntu_manual_2.4 -> manual_2.4)
                 build_name = '_'.join(build_name.split('_')[1:])
 
                 # Save to find not tested
                 self.__all_builds.append((os_name, build_name))
-
                 builds_count = len(builds)
 
                 # This is to avoid running Docker in Docker or Docker in VirtualBox
@@ -125,6 +129,8 @@ class Tester:
                     fs.write('\n')
 
         builds.sort(key=lambda build: f'{self.__get_build_os_name(build)}_{build.build_name}')
+        if self.config.debug_mode:
+            print(builds)
         return builds
 
     def test_builds(self):
