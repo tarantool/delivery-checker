@@ -6,7 +6,7 @@ from typing import Optional
 Matches convenient distrib names to what we use in the JSON config.
 Use for --dist resolving.
 """
-distrib_to_json_name: dict[str, str] = {
+distrib_to_json_name: dict = {
     'amazon': 'amazon-linux',
     'centos': 'rhel-centos',
     'macos': 'os-x',
@@ -16,7 +16,7 @@ distrib_to_json_name: dict[str, str] = {
 """
 Nobody remembers the Debian release names
 """
-debian_version_to_name: dict[str, str] = {
+debian_version_to_name: dict = {
     '11': 'bullseye',
     '10': 'buster',
     '9': 'stretch',
@@ -41,6 +41,7 @@ class CheckerConfig:
 
     console_mode: bool
     debug_mode: bool
+    ci_mode: bool
 
     commands_url: str
     commands_url_user: str
@@ -88,6 +89,7 @@ class CheckerConfig:
 
         self.console_mode = cli_args.console_mode
         self.debug_mode = cli_args.debug_mode
+        self.ci_mode = cli_args.ci_mode or os.environ.get('GITHUB_ENV') is not None
 
         self.commands_url = \
             cli_args.commands_url or \
