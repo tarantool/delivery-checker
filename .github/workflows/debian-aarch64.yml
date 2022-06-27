@@ -1,0 +1,31 @@
+---
+name: Debian @ AArch64
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/debian-aarch64.yml'
+jobs:
+  debian:
+    env:
+      dist: 'debian'
+    strategy:
+      fail-fast: false
+      matrix:
+        dist-version: [ '11', '10' ]
+        tarantool-version: [ '2.10' ]
+        build: [ 'script', 'manual' ]
+    runs-on: [ self-hosted, graviton ]
+    steps:
+      - uses: actions/checkout@master
+
+      - uses: tarantool/actions/setup-venv@master
+
+      - uses: ./.github/actions/check
+        with:
+          dist: ${{ env.dist }}
+          dist-version: ${{ matrix.dist-version }}
+          tarantool-version: ${{ matrix.tarantool-version }}
+          build: ${{ matrix.build }}
