@@ -77,11 +77,11 @@ def main():
         tester.sync_results()
     is_results_ok = tester.is_results_ok()
 
-    if config.ci_mode:
-        return is_results_ok
-
     results = tester.get_results()
     dir_name = tester.archive_results()
+
+    if config.ci_mode:
+        return is_results_ok
 
     bot = Bot(args.config, args.debug_mode)
     bot.send_out_builds_info(results, dir_name)
