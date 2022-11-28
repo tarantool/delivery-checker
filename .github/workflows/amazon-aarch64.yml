@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - uses: tarantool/actions/setup-venv@master
+      - uses: tarantool/actions/setup-venv@lastochka42/fix-setup-venc-condition
 
       - uses: ./.github/actions/check
         with:
