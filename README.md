@@ -1,4 +1,17 @@
-# Delivery Checker
+# Current state
+
+[![Amazon Linux](https://github.com/tarantool/delivery-checker/actions/workflows/amazon.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/amazon.yml)
+[![Amazon Linux @ AArch64](https://github.com/tarantool/delivery-checker/actions/workflows/amazon-aarch64.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/amazon-aarch64.yml)
+[![Debian](https://github.com/tarantool/delivery-checker/actions/workflows/debian.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/debian.yml)
+[![Debian @ AArch64](https://github.com/tarantool/delivery-checker/actions/workflows/debian-aarch64.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/debian-aarch64.yml)
+[![Fedora](https://github.com/tarantool/delivery-checker/actions/workflows/fedora.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/fedora.yml)
+[![Fedora @ AArch64](https://github.com/tarantool/delivery-checker/actions/workflows/fedora-aarch64.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/fedora-aarch64.yml)
+[![RHEL/CentOS](https://github.com/tarantool/delivery-checker/actions/workflows/centos.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/centos.yml)
+[![RHEL/CentOS @ AArch64](https://github.com/tarantool/delivery-checker/actions/workflows/centos-aarch64.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/centos-aarch64.yml)
+[![Ubuntu](https://github.com/tarantool/delivery-checker/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/ubuntu.yml)
+[![Ubuntu @ AArch64](https://github.com/tarantool/delivery-checker/actions/workflows/ubuntu-aarch64.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/ubuntu-aarch64.yml)
+
+# About Delivery Checker
 
 This is a program that downloads Tarantool's installation commands and tries to
 run them on different OS.
