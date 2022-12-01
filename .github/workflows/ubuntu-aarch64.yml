@@ -7,6 +7,28 @@ on:
   pull_request:
     paths:
       - '.github/workflows/ubuntu-aarch64.yml'
+
+# Cancel workflow runs on PRs when the PR is updated with a newer commit.
+# Such runs will have a concurrency group named
+# `{github.workflow}-{github.ref}`,
+# for example,
+# `Amazon Linux-refs/pull/42/merge`.
+#
+# Runs on branch `master` and tags will never be canceled,
+# due to having a unique group name
+# `{github.run_id}-{github.run_attempt}`,
+# for example,
+# `3477882280-1`.
+concurrency:
+  group: ${{
+    (
+    github.ref == 'refs/heads/master' ||
+    startsWith(github.ref, 'refs/tags/')
+    ) &&
+    format('{0}-{1}', github.run_id, github.run_attempt) ||
+    format('{0}-{1}', github.workflow, github.ref) }}
+  cancel-in-progress: true
+
 jobs:
   ubuntu:
     env:
@@ -14,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist-version: [ '22.04', '21.10', '21.04', '20.04' ]
+        dist-version: [ '22.04', '20.04' ]
         tarantool-version: [ '2.10']
         build: [ 'script', 'manual' ]
     runs-on: [ self-hosted, graviton ]
