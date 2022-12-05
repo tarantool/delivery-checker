@@ -51,3 +51,11 @@ jobs:
           dist-version: ${{ matrix.dist-version }}
           tarantool-version: ${{ matrix.tarantool-version }}
           build: ${{ matrix.build }}
+
+      - name: Set current date as env variable
+        run: echo "NOW=$(date +'%Y-%m-%d-%H-%M')" >> $GITHUB_ENV
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.NOW }}-fedora-aarch64-${{ github.run_id }}
+          path: archive
