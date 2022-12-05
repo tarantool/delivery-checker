@@ -38,7 +38,7 @@ jobs:
       matrix:
         dist-version: [ '2' ]
         tarantool-version: [ '2.10' ]
-        build: [ 'script', 'manual' ]
+        build: [ 'script' ]
     runs-on: [ self-hosted, graviton ]
     steps:
       - uses: actions/checkout@master

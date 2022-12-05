@@ -37,7 +37,7 @@ jobs:
       matrix:
         dist-version: [ '2' ]
         tarantool-version: [ '2.10', '1.10' ]
-        build: [ 'script', 'manual' ]
+        build: [ 'script' ]
     runs-on: [ self-hosted, ubuntu-20.04-self-hosted ]
     steps:
       - uses: actions/checkout@master
