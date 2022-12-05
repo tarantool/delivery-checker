@@ -1,6 +1,6 @@
 
 {
-***REMOVED***
+  "telegram_token": "1234567890:qWerTyuIOpaSDf-ghJKl-qWerTyuIOpaSDf",
   "telegram_db": {
     "name": "postgres_db_name",
     "user": "delivery_checker_bot",
