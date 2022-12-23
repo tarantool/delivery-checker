@@ -34,43 +34,46 @@ class CheckerConfig:
     2. Configuration values in a .json configuration file.
     3. Default values.
     """
-    version: str
-    build: str
-    dist: str
-    dist_version: str
+    # Parameters to choose the exact installation instruction
+    version: str  # Tarantool version from CLI args, such as 1.10 or 2.10
+    build: str  # A build type from CLI args: script or manual
+    dist: str  # OS for check from CLI args (for docker or VM) or from the host
+    dist_version: str  # OS version from CLI args (for docker or VM) or from the host
 
-    console_mode: bool
-    debug_mode: bool
-    ci_mode: bool
+    # Parameters to choose the check modes
+    console_mode: bool  # Run in the console
+    debug_mode: bool  # Run with the verbose messages
+    ci_mode: bool  # Run one-time test, skip results archiving and Telegram bot message
 
-    commands_url: str
-    commands_url_user: str
-    commands_url_pass: str
-    scripts_dir_path: str
-    prepare_dir_name: str
-    prepare_dir_path: str
-    install_dir_name: str
-    install_dir_path: str
-    local_dir_path: str
-    remote_dir_path: str
-    archive_dir_path: str
-    logs_dir_name: str
-    logs_dir_path: str
-    tests_dir_name: str
-    tests_dir_path: str
-    results_file_name: str
-    results_file_path: str
-    default_use_cache: str
+    # Parameters to get installation commands and paths for auxiliary files
+    commands_url: str  # URL to download installation instructions (config file/CLI)
+    commands_url_user: str  # User, if URL needs authorisation (config file/CLI)
+    commands_url_pass: str  # Password, if URL needs authorisation (config file/CLI)
+    scripts_dir_path: str  # Path to the dir with installation scripts (config file or './scripts')
+    prepare_dir_name: str  # Dir name for bash scripts to prepare OS (config file or 'prepare')
+    prepare_dir_path: str  # Path to the dir with preparation scripts (config file or './scripts/prepare')
+    install_dir_name: str  # Dir name for installation instructions (config file or 'install')
+    install_dir_path: str  # Path to the installation dir (config file or './scripts/install')
+    local_dir_path: str  # Path to the archive dir in VM or container (config file or './local')
+    remote_dir_path: str  # Path to the remote server dir if `use_remote_results` is True (config file or './remote')
+    archive_dir_path: str  # Path to save check logs and test result (config file or './archive')
+    logs_dir_name: str  # Name for the check log dir (config file or 'logs')
+    logs_dir_path: str  # Path to the check log dir in VM or container (config file or './local/logs')
+    tests_dir_name: str  # Name for the tests results dir in VM or container (config file or 'tests')
+    tests_dir_path: str  # Path to tests results dir in VM or container (config file or './local/tests')
+    results_file_name: str  # Name of the file with check results (config file or 'result.json')
+    results_file_path: str  # Path to the result file (config file or './local/results.json')
+    default_use_cache: bool  # Whether to use Docker cache or not (config file or 'False')
 
-    # remote configuration
-    send_to_remote: dict
-    use_remote_results: bool
+    # Parameters for the remote configuration
+    send_to_remote: dict  # Params for connection to remote server for the check (config file)
+    use_remote_results: bool  # True, if we use remote server (config file or 'False')
 
-    # large dicts
-    docker_params: dict
-    virtual_box_params: dict
+    # Parameters for the VM and Docker setup
+    docker_params: dict  # Params for Docker container (config file)
+    virtual_box_params: dict  # Params for VM (config file)
 
-    # the whole json config, stored for debug
+    # The whole json config file, stored for debug
     json: dict
 
     def __init__(self, cli_args, config_json):
