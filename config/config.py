@@ -1,6 +1,7 @@
 import os
+import platform
 from dataclasses import dataclass
-from typing import Optional
+from datetime import datetime
 
 """
 Matches convenient distrib names to what we use in the JSON config.
@@ -21,6 +22,23 @@ debian_version_to_name: dict = {
     '10': 'buster',
     '9': 'stretch',
 }
+
+
+def get_host_os_info():
+    """Gets the current OS version in the case of '--host-mode'.
+
+    For macOS, the system is defined as 'Darwin'. Module 'platform' has 'mac_ver'
+    method to get the version.
+    For Linux versions, we need 'distro' package to get exact linux distribution
+    and version.
+    """
+    # TODO: write the getting OS info if the host OS is Linux
+    os_name = platform.system()
+    os_version = 'unknown'
+    if os_name == 'Darwin':
+        os_name = 'os-x'
+        os_version = platform.mac_ver()[0]
+    return os_name, os_version
 
 
 @dataclass
@@ -44,6 +62,7 @@ class CheckerConfig:
     console_mode: bool  # Run in the console
     debug_mode: bool  # Run with the verbose messages
     ci_mode: bool  # Run one-time test, skip results archiving and Telegram bot message
+    host_mode: bool  # Run tests without virtualization, skip results archiving and Telegram bot message
 
     # Parameters to get installation commands and paths for auxiliary files
     commands_url: str  # URL to download installation instructions (config file/CLI)
@@ -76,19 +95,24 @@ class CheckerConfig:
     # The whole json config file, stored for debug
     json: dict
 
-    def __init__(self, cli_args, config_json):
+    def __init__(self, cli_args, config_json=None):
 
         self.version = cli_args.version or None
         self.build = cli_args.build or None
+        self.host_mode = cli_args.host_mode or False
 
-        assert not cli_args.dist_version or cli_args.dist, 'Argument --dist-version requires --dist'
-        self.dist = distrib_to_json_name.get(cli_args.dist, cli_args.dist)
-        if self.dist == 'debian':
-            self.dist_version = \
-                debian_version_to_name.get(cli_args.dist_version) or \
-                cli_args.dist_version or None
+        if self.host_mode:
+            self.dist, self.dist_version = get_host_os_info()
+            os.makedirs('./local', exist_ok=True)
         else:
-            self.dist_version = cli_args.dist_version or None
+            assert not cli_args.dist_version or cli_args.dist, 'Argument --dist-version requires --dist'
+            self.dist = distrib_to_json_name.get(cli_args.dist, cli_args.dist)
+            if self.dist == 'debian':
+                self.dist_version = \
+                    debian_version_to_name.get(cli_args.dist_version) or \
+                    cli_args.dist_version or None
+            else:
+                self.dist_version = cli_args.dist_version or None
 
         self.console_mode = cli_args.console_mode
         self.debug_mode = cli_args.debug_mode
@@ -128,28 +152,29 @@ class CheckerConfig:
 
         self.default_use_cache = config_json.get('default_use_cache', False)
 
-        os_params = config_json.get('os_params')
-        assert config_json.get('os_params') is not None, 'No OS params in config!'
+        if not self.host_mode:
+            os_params = config_json.get('os_params')
+            assert config_json.get('os_params'), 'No OS params in config!'
 
-        self.send_to_remote = config_json.get('send_to_remote')
-        self.use_remote_results = config_json.get('use_remote_results', False)
+            self.send_to_remote = config_json.get('send_to_remote', {})
+            self.use_remote_results = config_json.get('use_remote_results', False)
 
-        self.docker_params = {
-            k: v['docker']
-            for k, v in os_params.items()
-            if v.get('docker') is not None and (not self.dist or self.dist == k)
-        }
-        if self.dist_version:
-            assert self.dist_version in self.docker_params[self.dist]['versions'], \
-                f'version {self.dist_version} not found in the list of {self.dist} versions'
-            self.docker_params[self.dist]['versions'] = [self.dist_version]
+            self.docker_params = {
+                k: v['docker']
+                for k, v in os_params.items()
+                if v.get('docker') is not None and (not self.dist or self.dist == k)
+            }
+            if self.dist_version:
+                assert self.dist_version in self.docker_params[self.dist]['versions'], \
+                    f'version {self.dist_version} not found in the list of {self.dist} versions'
+                self.docker_params[self.dist]['versions'] = [self.dist_version]
 
-        self.virtual_box_params = {
-            k: v['virtual_box']
-            for k, v in os_params.items()
-            if v.get('virtual_box') is not None and (not self.dist or self.dist == k)
-        }
-        self.json = config_json
+            self.virtual_box_params = {
+                k: v['virtual_box']
+                for k, v in os_params.items()
+                if v.get('virtual_box') is not None and (not self.dist or self.dist == k)
+            }
+            self.json = config_json
 
         if self.debug_mode:
             print(self)
