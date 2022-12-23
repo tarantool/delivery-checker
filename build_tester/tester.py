@@ -6,6 +6,7 @@ import time
 import requests
 
 from build_tester.builders.docker_builder import DockerBuilder, DockerInfo
+from build_tester.builders.host_builder import HostBuilder, HostInfo
 from build_tester.builders.virtual_box import VirtualBoxBuilder, VirtualBoxInfo
 from build_tester.results_sync import ResultsManager, Result
 from config.config import CheckerConfig
@@ -82,6 +83,21 @@ class Tester:
         # Get base of install scripts
         with open(os.path.join(self.config.install_dir_path, 'default.sh'), mode='r') as fs:
             default_script = fs.read()
+
+        if self.config.host_mode:
+            os_name = 'macos' if self.config.dist == 'os-x' else self.config.dist
+            cmd = f'{os_name}_{self.config.build}_{self.config.version}'
+
+            if site_commands[self.config.dist][cmd]:
+                build_command = site_commands[self.config.dist][cmd]
+                build = HostInfo(
+                    os_name=self.config.dist,
+                    build_name=self.config.build,
+                    build_commands=build_command,
+                    skip=False,
+                    tarantool_version=self.config.version
+                )
+                return [build]
 
         builds = []
         for os_name, versions in site_commands.items():
@@ -184,6 +200,16 @@ class Tester:
                             log_func=self.__log,
                         )
                         deploy_result = virtual_box_builder.deploy()
+                    elif isinstance(build, HostInfo):
+                        host_builder = HostBuilder(
+                            build_info=build,
+                            archive_dir_path=self.config.archive_dir_path,
+                            prepare_dir_path=self.config.prepare_dir_path,
+                            tests_dir_path=self.config.tests_dir_path,
+                            scripts_dir_path=self.config.scripts_dir_path,
+                            results_file_path=self.config.results_file_path,
+                        )
+                        deploy_result = host_builder.run()
                     else:
                         deploy_result = False
 

@@ -57,7 +57,7 @@ class ResultsManager:
         config = self.config
         self.__send_to_remote = None
 
-        if config.send_to_remote:
+        if not config.host_mode and config.send_to_remote:
             login = config.send_to_remote.get('login')
             assert login is not None, 'Login is required in send_to_remote section'
             password = config.send_to_remote.get('password')
@@ -173,7 +173,7 @@ class ResultsManager:
 
     def sync_results(self, all_builds):
         self.send_results()
-        if self.config.use_remote_results:
+        if not self.config.host_mode and self.config.use_remote_results:
             self.use_remote_results()
         self.find_lost_results(all_builds)
 

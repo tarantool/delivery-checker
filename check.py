@@ -63,24 +63,32 @@ def main():
         '--commands-url-pass',
         help='Password for auth on the commands_url'
     )
+    parser.add_argument(
+        '--host-mode',
+        action='store_true',
+        help='Start the check on the host without any virtualization'
+    )
 
     args: argparse.Namespace = parser.parse_args()
 
-    with open(args.config, 'r') as fs:
-        config_json = json.load(fs)
+    if not args.host_mode:
+        with open(args.config, 'r') as fs:
+            config_json = json.load(fs)
+    else:
+        config_json = {}
 
     config = CheckerConfig(cli_args=args, config_json=config_json)
 
     tester = Tester(config=config)
     tester.test_builds()
-    if not config.ci_mode:
+    if not config.ci_mode or not config.host_mode:
         tester.sync_results()
     is_results_ok = tester.is_results_ok()
 
     results = tester.get_results()
     dir_name = tester.archive_results()
 
-    if config.ci_mode:
+    if config.ci_mode or config.host_mode:
         return is_results_ok
 
     bot = Bot(args.config, args.debug_mode)
