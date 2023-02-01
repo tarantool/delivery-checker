@@ -59,3 +59,11 @@ jobs:
         with:
           name: ${{ env.NOW }}-ubuntu-aarch64-${{ github.run_id }}
           path: archive
+
+      - name: Send notification
+        if: failure()
+        uses: ./.github/actions/failure-notify
+        with:
+          bot-token: ${{ secrets.VKTEAMS_TARANTOOLBOT_TOKEN }}
+          service-chat-id: ${{ secrets.VKTEAMS_SERVICE_CHAT_ID }}
+          debug-chat-id: ${{ secrets.VKTEAMS_DEBUG_CHAT_ID }}

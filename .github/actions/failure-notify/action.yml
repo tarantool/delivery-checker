@@ -1,0 +1,37 @@
+---
+name: 'Send VK Teams notification'
+description: 'Set the VK Teams chat and send VK Teams notification about job failure'
+inputs:
+  bot-token:
+    description: 'VK Teams bot token'
+    required: true
+  bot-api:
+    description: 'Bot API URL'
+    required: false
+    default: 'https://api.internal.myteam.mail.ru/bot/v1/'
+  service-chat-id:
+    description: 'VK Teams chat for service notification (failure on prod)'
+    required: true
+  debug-chat-id:
+    description: 'VK Teams chat for debug notification (failure on unstable branches)'
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Set the chat for failure notification
+      shell: bash
+      run: |
+        if [[ $GITHUB_REF == 'refs/heads/master' ]]; then
+            echo "CHAT_ID=${{ inputs.service-chat-id }}" >> "$GITHUB_ENV"
+        else
+            echo "CHAT_ID=${{ inputs.debug-chat-id }}" >> "$GITHUB_ENV"
+        fi
+
+    - name: Send notification
+      uses: dasshit/myteam-notify@master
+      with:
+        api-url: ${{ inputs.bot-api }}
+        bot-token: ${{ inputs.bot-token }}
+        chat-id: ${{ env.CHAT_ID }}
+        msg-text: "delivery-checker failure for ${{ github.workflow }}:
+                  https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
