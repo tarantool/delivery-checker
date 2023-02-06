@@ -53,9 +53,11 @@ jobs:
           build: ${{ matrix.build }}
 
       - name: Set current date as env variable
+        if: always()
         run: echo "NOW=$(date +'%Y-%m-%d-%H-%M')" >> $GITHUB_ENV
 
       - uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: ${{ env.NOW }}-fedora-aarch64-${{ github.run_id }}
           path: archive
