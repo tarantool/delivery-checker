@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ 'macos-11', 'macos-12' ]
-        tarantool-version: [ '2.10', '2.11' ]
+        tarantool-version: [ '2.10', '3.0' ]
 
     runs-on: ${{ matrix.os }}
     steps:
