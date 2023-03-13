@@ -37,7 +37,13 @@ jobs:
       matrix:
         dist-version: [ '11', '10', '9' ]
         tarantool-version: [ '2.10', '1.10' ]
+        pkg-type: [ '', 'gc64' ]
         build: [ 'script', 'manual' ]
+        exclude:
+          - tarantool-version: '1.10'
+            pkg-type: 'gc64'
+          - build: 'manual'
+            pkg-type: 'gc64'
     runs-on: [ self-hosted, ubuntu-20.04-self-hosted ]
     steps:
       - uses: actions/checkout@master
@@ -57,7 +63,7 @@ jobs:
             --dist-version ${{ matrix.dist-version }} \
             --version ${{ matrix.tarantool-version }} \
             --build ${{ matrix.build }} \
-            -d -v
+            -d -v ${{ matrix.pkg-type == 'gc64' && '--gc64' || '' }}
 
       - name: Set current date as env variable
         if: always()

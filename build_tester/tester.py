@@ -110,6 +110,10 @@ class Tester:
                 # Remove os name from build name (ubuntu_manual_2.4 -> manual_2.4)
                 build_name = '_'.join(build_name.split('_')[1:])
 
+                # Add 'gc64' suffix to build name
+                if self.config.gc64:
+                    build_name += '_gc64'
+
                 # Save to find not tested
                 self.__all_builds.append((os_name, build_name))
                 builds_count = len(builds)

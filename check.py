@@ -32,6 +32,11 @@ def main():
         help='Tarantool version, such as 1.10 or 2.10'
     )
     parser.add_argument(
+        '--gc64',
+        action='store_true',
+        help='Check installation of GC64 packages'
+    )
+    parser.add_argument(
         '--build',
         help='Tarantool build: manual, script, or nightly',
     )

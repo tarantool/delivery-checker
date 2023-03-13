@@ -19,7 +19,7 @@ local function write_results(results)
         res_filename = 'tests_results.json'
     end
     local res_fh = fio.open(res_filename, { 'O_CREAT', 'O_TRUNC', 'O_WRONLY' }, tonumber('644', 8))
-    res_fh:write(json.encode(results))
+    res_fh:write(json.encode(results) .. '\n')
     res_fh:close()
 end
 
@@ -41,8 +41,20 @@ local function tnt_version()
     assert(begin == 1, 'Expected version: ' .. expected_version .. ', got: ' .. _TARANTOOL)
 end
 
+local function gc64()
+    local gc64_actual = tostring(require('ffi').abi('gc64'))
+    local gc64_expected = os.getenv('GC64') or 'false'
+    assert(gc64_actual == gc64_expected,
+        'Expected GC64: ' .. gc64_expected .. ', got: ' .. gc64_actual)
+end
+
 local results = {}
 results['tnt_version'] = test(tnt_version)
+if os.execute('[ $(uname) = Linux ]') == 0 then
+    if os.execute('[ $(uname -m) = x86_64 ]') == 0 then
+        results['gc64'] = test(gc64)
+    end
+end
 results['box_cfg'] = test(box_cfg)
 write_results(results)
 

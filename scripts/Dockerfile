@@ -18,6 +18,7 @@ RUN ./prepare.sh
 
 ARG BUILD_NAME="latest"
 ARG TNT_VERSION
+ARG GC64
 
 COPY install/${OS_NAME}_${BUILD_NAME}.sh install.sh
 RUN chmod +x install.sh
@@ -27,6 +28,7 @@ ARG VERSION
 ENV RESULTS_DIR="${WORK_DIR}/results"
 ENV RESULTS_FILE="${RESULTS_DIR}/${OS_NAME}_${VERSION}_${BUILD_NAME}.json"
 ENV TNT_VERSION="${TNT_VERSION}"
+ENV GC64="${GC64}"
 
 RUN mkdir -p ${RESULTS_DIR}
 
