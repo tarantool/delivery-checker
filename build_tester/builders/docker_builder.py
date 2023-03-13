@@ -165,6 +165,12 @@ class DockerBuilder:
         result = False
 
         try:
+            if self.build_info.build_name.endswith('_gc64'):
+                tnt_version = self.build_info.build_name.split('_')[-2]
+                gc64 = 'true'
+            else:
+                tnt_version = self.build_info.build_name.split('_')[-1]
+                gc64 = 'false'
             self.__image_id = self.__build_image(
                 path=self.scripts_dir_path,
                 tag=container_name,
@@ -174,7 +180,8 @@ class DockerBuilder:
                     'OS_NAME': self.build_info.os_name,
                     'PREPARE_SCRIPT_NAME': self.__get_best_prepare_script(),
                     'BUILD_NAME': self.build_info.build_name,
-                    'TNT_VERSION': self.build_info.build_name.split("_")[-1],
+                    'TNT_VERSION': tnt_version,
+                    'GC64': gc64,
                 },
                 timeout=timeout,
                 nocache=not self.build_info.use_cache,

@@ -54,6 +54,7 @@ class CheckerConfig:
     """
     # Parameters to choose the exact installation instruction
     version: str  # Tarantool version from CLI args, such as 1.10 or 2.10
+    gc64: bool  # Check installation of GC64 packages
     build: str  # A build type from CLI args: script or manual
     dist: str  # OS for check from CLI args (for docker or VM) or from the host
     dist_version: str  # OS version from CLI args (for docker or VM) or from the host
@@ -98,8 +99,15 @@ class CheckerConfig:
     def __init__(self, cli_args, config_json=None):
 
         self.version = cli_args.version or None
+        self.gc64 = cli_args.gc64 or False
         self.build = cli_args.build or None
         self.host_mode = cli_args.host_mode or False
+
+        if self.gc64 and self.build == 'manual':
+            raise NotImplementedError(
+                'Manual instruction for the installation of GC64 packages is not implemented '
+                'on the site'
+            )
 
         if self.host_mode:
             self.dist, self.dist_version = get_host_os_info()
