@@ -33,32 +33,29 @@ jobs:
   centos-aarch64:
     env:
       dist: 'centos'
+
     strategy:
       fail-fast: false
       matrix:
         dist-version: [ '8', '7' ]
         tarantool-version: [ '2.10' ]
         build: [ 'script', 'manual' ]
+
     runs-on: [ self-hosted, graviton ]
+
     steps:
-      - uses: actions/checkout@master
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      - uses: tarantool/actions/setup-venv@master
-
-      - uses: ./.github/actions/check
+      - name: Check installation of Tarantool
+        uses: ./.github/actions/check
         with:
           dist: ${{ env.dist }}
           dist-version: ${{ matrix.dist-version }}
           tarantool-version: ${{ matrix.tarantool-version }}
           build: ${{ matrix.build }}
 
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: ${{ github.job }}-${{ Join(matrix.*, '-') }}
-          path: archive
-
-      - name: Send notification
+      - name: Send notification on failure
         if: failure()
         uses: ./.github/actions/failure-notify
         with:
