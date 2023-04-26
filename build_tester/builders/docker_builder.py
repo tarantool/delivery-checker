@@ -46,11 +46,13 @@ class DockerBuilder:
                 for tnt_version in params["skip_os_versions"].get(version, []):
                     if build_name.endswith(tnt_version):
                         skip = True
-
+            image = params.get('image', os_name)
+            if 'tarantool/delivery-checker:' in version:
+                image, version = version.partition(':')[::2]
             build_list.append(DockerInfo(
                 os_name=os_name,
                 build_name=build_name,
-                image=params.get('image', os_name),
+                image=image,
                 image_version=version,
                 skip=build_name in params.get('skip', []) or skip,
                 use_cache=params.get('use_cache', default_use_cache),
