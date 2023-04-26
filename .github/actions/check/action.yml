@@ -1,31 +1,46 @@
 ---
-name: 'Check Tarantool installation'
+name: Check Tarantool installation
 description: >
-  'Check if Tarantool version installs on a given
-  distribution/version with specified build type'
+  Check if Tarantool version installs on a given distribution/version with
+  specified build type
+
 inputs:
   dist:
-    description: 'Distribution name'
+    description: Distribution name
     required: true
   dist-version:
-    description: 'Distribution version'
+    description: Distribution version
     required: true
   tarantool-version:
-    description: 'Tarantool version'
+    description: Tarantool version
     required: true
   build:
     description: 'Build or installation method: script, manual or nightly'
     required: true
+  pkg-type:
+    description: >
+      Type of package to be installed. Provide 'gc64' to install GC64 package
+    required: false
+
 runs:
-  using: "composite"
+  using: composite
   steps:
-    # Setup Python environment
-    - shell: bash
+    - name: Setup Python environment
+      uses: tarantool/actions/setup-venv@master
+
+    - name: Run check.py script
       run: |
-        source ./venv/bin/activate && \
-        python check.py --config config-example.json \
+        source ./venv/bin/activate && python check.py --config config-example.json \
           --dist ${{ inputs.dist }} \
           --dist-version ${{ inputs.dist-version }} \
           --version ${{ inputs.tarantool-version }} \
           --build ${{ inputs.build }} \
-          -d -v
+          -d -v ${{ inputs.pkg-type == 'gc64' && '--gc64' || '' }}
+      shell: bash
+
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.job }}-${{ join(matrix.*, '-') }}
+        path: archive

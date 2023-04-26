@@ -32,46 +32,36 @@ jobs:
   centos:
     env:
       dist: 'centos'
+
     strategy:
       fail-fast: false
       matrix:
         dist-version: [ '8', '7' ]
         tarantool-version: [ '2.10', '1.10' ]
-        pkg-type: [ '', 'gc64' ]
+        pkg-type: [ 'nogc64', 'gc64' ]
         build: [ 'script', 'manual' ]
         exclude:
           - tarantool-version: '1.10'
             pkg-type: 'gc64'
           - build: 'manual'
             pkg-type: 'gc64'
-    runs-on: [ self-hosted, ubuntu-20.04-self-hosted ]
-    steps:
-      - uses: actions/checkout@master
 
-      - name: Setup Python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.8.5'
-          cache: pip
-      - name: Setup Python requirements
-        run: pip install -r requirements.txt
+    runs-on: [ self-hosted, ubuntu-20.04-self-hosted ]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
       - name: Check installation of Tarantool
-        run: |
-          python check.py --config config-example.json \
-            --dist ${{ env.dist }} \
-            --dist-version ${{ matrix.dist-version }} \
-            --version ${{ matrix.tarantool-version }} \
-            --build ${{ matrix.build }} \
-            -d -v ${{ matrix.pkg-type == 'gc64' && '--gc64' || '' }}
-
-      - uses: actions/upload-artifact@v3
-        if: always()
+        uses: ./.github/actions/check
         with:
-          name: ${{ github.job }}-${{ Join(matrix.*, '-') }}
-          path: archive
+          dist: ${{ env.dist }}
+          dist-version: ${{ matrix.dist-version }}
+          tarantool-version: ${{ matrix.tarantool-version }}
+          build: ${{ matrix.build }}
+          pkg-type: ${{ matrix.pkg-type }}
 
-      - name: Send notification
+      - name: Send notification on failure
         if: failure()
         uses: ./.github/actions/failure-notify
         with:
