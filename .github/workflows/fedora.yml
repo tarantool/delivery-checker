@@ -52,11 +52,19 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Change Docker image if needed
+        run: |
+          version="${{ matrix.dist-version }}"
+          if ${{ contains('34, 35', matrix.dist-version) }}; then
+            version="tarantool/delivery-checker:fedora-${{ matrix.dist-version }}"
+          fi
+          echo "version=${version}" >> $GITHUB_ENV
+
       - name: Check installation of Tarantool
         uses: ./.github/actions/check
         with:
           dist: ${{ env.dist }}
-          dist-version: ${{ matrix.dist-version }}
+          dist-version: ${{ env.version }}
           tarantool-version: ${{ matrix.tarantool-version }}
           build: ${{ matrix.build }}
           pkg-type: ${{ matrix.pkg-type }}

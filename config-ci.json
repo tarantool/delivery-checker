@@ -1,0 +1,49 @@
+{
+  "os_params": {
+    "amazon-linux": {
+      "docker": {
+        "image": "amazonlinux",
+        "versions": [
+          "2"
+        ]
+      }
+    },
+    "debian": {
+      "docker": {
+        "versions": [
+          "tarantool/delivery-checker:debian-stretch",
+          "buster",
+          "bullseye"
+        ]
+      }
+    },
+    "fedora": {
+      "docker": {
+        "versions": [
+          "tarantool/delivery-checker:fedora-34",
+          "tarantool/delivery-checker:fedora-35",
+          "36"
+        ]
+      }
+    },
+    "rhel-centos": {
+      "docker": {
+        "image": "centos",
+        "versions": [
+          "7",
+          "8"
+        ]
+      }
+    },
+    "ubuntu": {
+      "docker": {
+        "versions": [
+          "16.04",
+          "18.04",
+          "20.04",
+          "22.04"
+        ]
+      }
+    }
+  }
+}

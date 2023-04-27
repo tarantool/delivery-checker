@@ -7,6 +7,7 @@ remote/
 archive/
 config*.json
 !config-example.json
+!config-ci.json
 !config-full.json
 !config-current.json
 *.db
