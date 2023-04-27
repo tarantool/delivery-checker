@@ -30,7 +30,7 @@ runs:
 
     - name: Run check.py script
       run: |
-        source ./venv/bin/activate && python check.py --config config-example.json \
+        source ./venv/bin/activate && python check.py --config config-ci.json \
           --dist ${{ inputs.dist }} \
           --dist-version ${{ inputs.dist-version }} \
           --version ${{ inputs.tarantool-version }} \
