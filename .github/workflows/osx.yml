@@ -49,6 +49,9 @@ jobs:
       - name: Setup Python requirements
         run: pip install -r requirements.txt
 
+      - name: Fetch newest version of Homebrew and all formulae
+        run: brew update --auto-update
+
       - name: Check installation of Tarantool
         run: |
           python check.py --host-mode \
