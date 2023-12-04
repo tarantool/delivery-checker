@@ -4,12 +4,16 @@ import shutil
 import time
 
 import requests
+import logging
 
 from build_tester.builders.docker_builder import DockerBuilder, DockerInfo
 from build_tester.builders.host_builder import HostBuilder, HostInfo
 from build_tester.builders.virtual_box import VirtualBoxBuilder, VirtualBoxInfo
 from build_tester.results_sync import ResultsManager, Result
 from config.config import CheckerConfig
+
+FORMAT='%(message)s'
+logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 
 class Tester:
@@ -24,6 +28,8 @@ class Tester:
         self.__results_manager = ResultsManager(config=config)
 
     def __log(self, msg):
+        if self.config.console_mode:
+            logging.info(msg)
         self.__logs.append(msg)
 
     def __save_logs(self, path=None):
