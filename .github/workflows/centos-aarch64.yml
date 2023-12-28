@@ -40,6 +40,10 @@ jobs:
         dist-version: [ '8', '7' ]
         tarantool-version: [ '2.11' ]
         build: [ 'script', 'manual' ]
+        include:
+          - dist-version: '8'
+            tarantool-version: '3.0'
+            build: 'script'
 
     runs-on: [ self-hosted, graviton ]
 
