@@ -51,6 +51,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        
+      - name: Debug with tmate on failure
+        uses: mxschmitt/action-tmate@v3
 
       - name: Change Docker image if needed
         run: |
