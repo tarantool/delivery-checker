@@ -35,6 +35,13 @@
         ]
       }
     },
+    "redos": {
+      "docker": {
+        "versions": [
+          "tarantool/delivery-checker:redos-7.3"
+        ]
+      }
+    },
     "ubuntu": {
       "docker": {
         "versions": [

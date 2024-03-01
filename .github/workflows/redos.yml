@@ -1,0 +1,76 @@
+name: RED OS
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/redos.yml'
+
+# Cancel workflow runs on PRs when the PR is updated with a newer commit.
+# Such runs will have a concurrency group named
+# `{github.workflow}-{github.ref}`,
+# for example,
+# `Amazon Linux-refs/pull/42/merge`.
+#
+# Runs on branch `master` and tags will never be canceled,
+# due to having a unique group name
+# `{github.run_id}-{github.run_attempt}`,
+# for example,
+# `3477882280-1`.
+concurrency:
+  group: ${{
+    (
+    github.ref == 'refs/heads/master' ||
+    startsWith(github.ref, 'refs/tags/')
+    ) &&
+    format('{0}-{1}', github.run_id, github.run_attempt) ||
+    format('{0}-{1}', github.workflow, github.ref) }}
+  cancel-in-progress: true
+
+jobs:
+  redos:
+    env:
+      dist: 'redos'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        dist-version: [ '7.3' ]
+        tarantool-version: [ '2.11' ]
+        pkg-type: [ 'nogc64', 'gc64' ]
+        build: [ 'script', 'manual' ]
+        exclude:
+          - build: 'manual'
+            pkg-type: 'gc64'
+
+    runs-on: [ self-hosted, ubuntu-20.04-self-hosted ]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Change Docker image if needed
+        run: |
+          version="${{ matrix.dist-version }}"
+          if ${{ contains('7.3', matrix.dist-version) }}; then
+            version="tarantool/delivery-checker:redos-${{ matrix.dist-version }}"
+          fi
+          echo "version=${version}" >> $GITHUB_ENV
+
+      - name: Check installation of Tarantool
+        uses: ./.github/actions/check
+        with:
+          dist: ${{ env.dist }}
+          dist-version: ${{ env.version }}
+          tarantool-version: ${{ matrix.tarantool-version }}
+          build: ${{ matrix.build }}
+          pkg-type: ${{ matrix.pkg-type }}
+
+      - name: Send notification on failure
+        if: failure()
+        uses: ./.github/actions/failure-notify
+        with:
+          bot-token: ${{ secrets.VKTEAMS_TARANTOOLBOT_TOKEN }}
+          service-chat-id: ${{ secrets.VKTEAMS_SERVICE_CHAT_ID }}
+          debug-chat-id: ${{ secrets.VKTEAMS_DEBUG_CHAT_ID }}
