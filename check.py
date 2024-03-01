@@ -49,7 +49,8 @@ def main():
              'fedora, '
              'freebsd, '
              'macos, '
-             'opensuse, or '
+             'opensuse, '
+             'redos, or '
              'ubuntu.'
     )
     parser.add_argument(
