@@ -10,6 +10,7 @@
 [![RHEL/CentOS @ AArch64](https://github.com/tarantool/delivery-checker/actions/workflows/centos-aarch64.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/centos-aarch64.yml)
 [![Ubuntu](https://github.com/tarantool/delivery-checker/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/ubuntu.yml)
 [![Ubuntu @ AArch64](https://github.com/tarantool/delivery-checker/actions/workflows/ubuntu-aarch64.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/ubuntu-aarch64.yml)
+[![RED OS](https://github.com/tarantool/delivery-checker/actions/workflows/redos.yml/badge.svg)](https://github.com/tarantool/delivery-checker/actions/workflows/redos.yml)
 
 # About Delivery Checker
 
