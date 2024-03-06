@@ -29,7 +29,7 @@ def main():
     )
     parser.add_argument(
         '--version',
-        help='Tarantool version, such as 1.10 or 2.10'
+        help='Tarantool version, such as 2.11 or 3.0'
     )
     parser.add_argument(
         '--gc64',
