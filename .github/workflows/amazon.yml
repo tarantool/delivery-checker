@@ -37,12 +37,9 @@ jobs:
       fail-fast: false
       matrix:
         dist-version: [ '2' ]
-        tarantool-version: [ '2.11', '1.10' ]
+        tarantool-version: [ '2.11' ]
         pkg-type: [ 'nogc64', 'gc64' ]
         build: [ 'script' ]
-        exclude:
-          - tarantool-version: '1.10'
-            pkg-type: 'gc64'
 
     runs-on: [ self-hosted, ubuntu-20.04-self-hosted ]
 

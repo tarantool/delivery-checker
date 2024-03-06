@@ -53,7 +53,7 @@ class CheckerConfig:
     3. Default values.
     """
     # Parameters to choose the exact installation instruction
-    version: str  # Tarantool version from CLI args, such as 1.10 or 2.10
+    version: str  # Tarantool version from CLI args, such as 2.11 or 3.0
     gc64: bool  # Check installation of GC64 packages
     build: str  # A build type from CLI args: script or manual
     dist: str  # OS for check from CLI args (for docker or VM) or from the host
