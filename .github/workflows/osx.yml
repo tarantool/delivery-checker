@@ -38,10 +38,10 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Python environment
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.8.5'
           cache: pip
@@ -59,7 +59,7 @@ jobs:
             --build brew \
             -d -v
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ${{ github.job }}-${{ Join(matrix.*, '-') }}
