@@ -45,7 +45,7 @@ jobs:
             pkg-type: 'gc64'
         include:
           - dist-version: '22.04'
-            tarantool-version: '3.0'
+            tarantool-version: '3.1'
             pkg-type: 'gc64'
             build: 'script'
 

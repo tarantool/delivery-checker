@@ -42,7 +42,7 @@ jobs:
         build: [ 'script', 'manual' ]
         include:
           - dist-version: '22.04'
-            tarantool-version: '3.0'
+            tarantool-version: '3.1'
             build: 'script'
 
     runs-on: [ self-hosted, graviton ]
