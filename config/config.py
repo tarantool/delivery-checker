@@ -1,7 +1,6 @@
 import os
 import platform
 from dataclasses import dataclass
-from datetime import datetime
 
 """
 Matches convenient distrib names to what we use in the JSON config.
@@ -10,8 +9,6 @@ Use for --dist resolving.
 distrib_to_json_name: dict = {
     'amazon': 'amazon-linux',
     'centos': 'rhel-centos',
-    'macos': 'os-x',
-    'osx': 'os-x',
 }
 
 """
@@ -36,7 +33,7 @@ def get_host_os_info():
     os_name = platform.system()
     os_version = 'unknown'
     if os_name == 'Darwin':
-        os_name = 'os-x'
+        os_name = 'macos'
         os_version = platform.mac_ver()[0]
     return os_name, os_version
 
@@ -62,8 +59,7 @@ class CheckerConfig:
     # Parameters to choose the check modes
     console_mode: bool  # Run in the console
     debug_mode: bool  # Run with the verbose messages
-    ci_mode: bool  # Run one-time test, skip results archiving and Telegram bot message
-    host_mode: bool  # Run tests without virtualization, skip results archiving and Telegram bot message
+    host_mode: bool  # Run tests without any virtualization, right on the host
 
     # Parameters to get installation commands and paths for auxiliary files
     commands_url: str  # URL to download installation instructions (config file/CLI)
@@ -87,6 +83,7 @@ class CheckerConfig:
 
     # Parameters for the remote configuration
     send_to_remote: dict  # Params for connection to remote server for the check (config file)
+    send_to_bot: bool  # Send results to bot (config file)
     use_remote_results: bool  # True, if we use remote server (config file or 'False')
 
     # Parameters for the VM and Docker setup
@@ -110,6 +107,7 @@ class CheckerConfig:
             )
 
         if self.host_mode:
+            assert self.version, 'Version must be set when --host-mode is used'
             self.dist, self.dist_version = get_host_os_info()
             os.makedirs('./local', exist_ok=True)
         else:
@@ -124,7 +122,6 @@ class CheckerConfig:
 
         self.console_mode = cli_args.console_mode
         self.debug_mode = cli_args.debug_mode
-        self.ci_mode = cli_args.ci_mode or os.environ.get('GITHUB_ENV') is not None
 
         self.commands_url = \
             cli_args.commands_url or \
@@ -160,12 +157,13 @@ class CheckerConfig:
 
         self.default_use_cache = config_json.get('default_use_cache', False)
 
+        self.send_to_remote = config_json.get('send_to_remote', {})
+        self.send_to_bot = config_json.get('send_to_bot', False)
+        self.use_remote_results = config_json.get('use_remote_results', False)
+
         if not self.host_mode:
             os_params = config_json.get('os_params')
             assert config_json.get('os_params'), 'No OS params in config!'
-
-            self.send_to_remote = config_json.get('send_to_remote', {})
-            self.use_remote_results = config_json.get('use_remote_results', False)
 
             self.docker_params = {
                 k: v['docker']
@@ -188,4 +186,4 @@ class CheckerConfig:
             print(self)
 
     def __str__(self):
-        return ''.join([f'{k}: {v}\n' for k, v in self.__dict__.items()])
+        return '\n'.join([f'{k}: {v}' for k, v in self.__dict__.items()])

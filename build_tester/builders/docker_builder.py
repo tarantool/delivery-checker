@@ -12,7 +12,7 @@ from build_tester.helpers.common import print_logs, get_header_str, get_subheade
 
 DockerInfo = namedtuple(
     typename='DockerInfo',
-    field_names=('os_name', 'build_name', 'image', 'image_version', 'skip', 'use_cache'),
+    field_names=('os_name', 'build_name', 'tnt_version', 'image', 'image_version', 'skip', 'use_cache'),
 )
 
 
@@ -35,7 +35,7 @@ class DockerBuilder:
         self.__image_id = None
 
     @staticmethod
-    def get_builds(config, os_name='docker', build_name='latest', default_use_cache=False):
+    def get_builds(config, os_name='docker', build_name='latest', tnt_version=None, default_use_cache=False):
         params = config.get(os_name)
         if params is None:
             return []
@@ -52,6 +52,7 @@ class DockerBuilder:
             build_list.append(DockerInfo(
                 os_name=os_name,
                 build_name=build_name,
+                tnt_version=tnt_version,
                 image=image,
                 image_version=version,
                 skip=build_name in params.get('skip', []) or skip,
@@ -60,7 +61,7 @@ class DockerBuilder:
         return build_list
 
     @staticmethod
-    def get_docker_builds(config, os_name, build_name, commands, default_use_cache=False):
+    def get_docker_builds(config, os_name, build_name, tnt_version, commands, default_use_cache=False):
         params = config.get(os_name)
         if params is None:
             return []
@@ -72,6 +73,7 @@ class DockerBuilder:
                 builds.append(DockerInfo(
                     os_name=os_name,
                     build_name=build_name,
+                    tnt_version=tnt_version,
                     image=match.group(2),
                     image_version=match.group(4) or 'latest',
                     skip=build_name in params.get('skip', []),
@@ -167,12 +169,13 @@ class DockerBuilder:
         result = False
 
         try:
-            if self.build_info.build_name.endswith('_gc64'):
-                tnt_version = self.build_info.build_name.split('_')[-2]
-                gc64 = 'true'
-            else:
-                tnt_version = self.build_info.build_name.split('_')[-1]
-                gc64 = 'false'
+            tnt_version = self.build_info.tnt_version
+            gc64 = self.build_info.build_name.endswith('_gc64')
+            if not tnt_version:
+                if gc64:
+                    tnt_version = self.build_info.build_name.split('_')[-2]
+                else:
+                    tnt_version = self.build_info.build_name.split('_')[-1]
             self.__image_id = self.__build_image(
                 path=self.scripts_dir_path,
                 tag=container_name,
@@ -183,7 +186,7 @@ class DockerBuilder:
                     'PREPARE_SCRIPT_NAME': self.__get_best_prepare_script(),
                     'BUILD_NAME': self.build_info.build_name,
                     'TNT_VERSION': tnt_version,
-                    'GC64': gc64,
+                    'GC64': str(gc64).lower(),
                 },
                 timeout=timeout,
                 nocache=not self.build_info.use_cache,

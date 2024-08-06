@@ -23,11 +23,6 @@ def main():
         help='Use this flag to enable debug mode',
     )
     parser.add_argument(
-        '--ci-mode',
-        action='store_true',
-        help='Run a one-time test, skipping results archivation and Telegram bot'
-    )
-    parser.add_argument(
         '--version',
         help='Tarantool version, such as 2.11 or 3.0'
     )
@@ -87,18 +82,16 @@ def main():
 
     tester = Tester(config=config)
     tester.test_builds()
-    if not config.ci_mode or not config.host_mode:
+    if config.send_to_remote:
         tester.sync_results()
     is_results_ok = tester.is_results_ok()
 
     results = tester.get_results()
     dir_name = tester.archive_results()
 
-    if config.ci_mode or config.host_mode:
-        return is_results_ok
-
-    bot = Bot(args.config, args.debug_mode)
-    bot.send_out_builds_info(results, dir_name)
+    if config.send_to_bot:
+        bot = Bot(args.config, args.debug_mode)
+        bot.send_out_builds_info(results, dir_name)
 
     return is_results_ok
 

@@ -5,7 +5,7 @@ from collections import namedtuple
 HostInfo = namedtuple(
     typename='HostInfo',
     field_names=(
-        'os_name', 'build_name', 'build_commands', 'skip', 'tarantool_version'
+        'os_name', 'build_name', 'build_commands', 'skip', 'tnt_version'
     )
 )
 
@@ -39,7 +39,7 @@ class HostBuilder:
                 os.system(command)
 
             # Set env for 'init.lua' check. Run the 'init.lua' test script
-            os.environ["TNT_VERSION"] = self.build_info.tarantool_version
+            os.environ["TNT_VERSION"] = self.build_info.tnt_version
             os.environ["RESULTS_FILE"] = self.results_file_path
             os.system(os.path.join(str(self.scripts_dir_path), 'init.lua'))
 

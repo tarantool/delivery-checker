@@ -90,18 +90,18 @@ class Tester:
         with open(os.path.join(self.config.install_dir_path, 'default.sh'), mode='r') as fs:
             default_script = fs.read()
 
-        if self.config.host_mode:
-            os_name = 'macos' if self.config.dist == 'os-x' else self.config.dist
-            cmd = f'{os_name}_{self.config.build}_{self.config.version}'
+        version_major = self.config.version.split('.')[0]
 
-            if site_commands[self.config.dist][cmd]:
-                build_command = site_commands[self.config.dist][cmd]
+        if self.config.host_mode:
+            cmd = f'{self.config.dist}_{self.config.build}_{version_major}'
+            build_command = site_commands[self.config.dist].get(cmd)
+            if build_command:
                 build = HostInfo(
                     os_name=self.config.dist,
-                    build_name=self.config.build,
+                    build_name=f"{self.config.build}_{version_major}",
                     build_commands=build_command,
                     skip=False,
-                    tarantool_version=self.config.version
+                    tnt_version=self.config.version
                 )
                 return [build]
 
@@ -110,7 +110,7 @@ class Tester:
             for build_name, commands in versions.items():
                 if self.config.build and self.config.build not in build_name:
                     continue
-                if self.config.version and self.config.version not in build_name:
+                if version_major and not build_name.endswith(version_major):
                     continue
 
                 # Remove os name from build name (ubuntu_manual_2.4 -> manual_2.4)
@@ -128,7 +128,7 @@ class Tester:
                 if 'docker' not in os_name:
                     builds += DockerBuilder.get_builds(
                         self.config.docker_params,
-                        os_name, build_name,
+                        os_name, build_name, self.config.version,
                         self.config.default_use_cache,
                     )
                     builds += VirtualBoxBuilder.get_builds(
@@ -140,7 +140,7 @@ class Tester:
                 else:
                     builds += DockerBuilder.get_docker_builds(
                         self.config.docker_params,
-                        os_name, build_name,
+                        os_name, build_name, self.config.version,
                         commands, self.config.default_use_cache,
                     )
                     commands = []
@@ -168,17 +168,13 @@ class Tester:
         canceled = False
         self.__results = {}
         self.__builds = self.__builds or self.__download_scripts()
+        if not self.__builds:
+            raise ValueError('Nothing to test. Check --build and --version options are correct')
         for build in self.__builds:
-
             self.__logs.clear()
-
             os_name = self.__get_build_os_name(build)
-
-            log_prefix = f'OS: {os_name}. Build: {build.build_name}.'
-            if self.config.console_mode:
-                print(f'\r{log_prefix} Running...', end='')
-            else:
-                print(f'{log_prefix} ', end='')
+            log_prefix = f'OS: {os_name}. Build: {build.build_name}'
+            print(f'\r{log_prefix}. Running...')
 
             self.__results[os_name] = self.__results.get(os_name, {})
             install_logs_path = os.path.join(self.config.logs_dir_path, f'{os_name}_{build.build_name}.log')
@@ -260,9 +256,7 @@ class Tester:
                 result = Result.ERROR
                 self.__save_logs(install_logs_path)
 
-            if self.config.console_mode:
-                print(f'\r{log_prefix} ', end='')
-            print(f'Elapsed time: {time.time() - start:.2f}. {result.value}')
+            print(f'\r{log_prefix}. Elapsed time: {time.time() - start:.2f} sec. {result.value}')
 
             self.__results[os_name][build.build_name] = result
 
