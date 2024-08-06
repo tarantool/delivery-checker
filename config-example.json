@@ -51,7 +51,7 @@
         ]
       }
     },
-    "os-x": {
+    "macos": {
       "virtual_box": {
         "mac-os_10.14": {
           "login": "checker",
