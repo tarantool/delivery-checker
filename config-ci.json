@@ -23,7 +23,9 @@
         "versions": [
           "tarantool/delivery-checker:fedora-34",
           "tarantool/delivery-checker:fedora-35",
-          "36"
+          "36",
+          "37",
+          "38"
         ]
       }
     },
