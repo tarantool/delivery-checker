@@ -13,7 +13,8 @@
         "versions": [
           "tarantool/delivery-checker:debian-stretch",
           "buster",
-          "bullseye"
+          "bullseye",
+          "bookworm"
         ]
       }
     },

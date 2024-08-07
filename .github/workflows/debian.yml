@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist-version: [ '11', '10', '9' ]
+        dist-version: [ '12', '11', '10', '9' ]
         tarantool-version: [ '2.11' ]
         pkg-type: [ 'nogc64', 'gc64' ]
         build: [ 'script', 'manual' ]
