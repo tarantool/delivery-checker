@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist-version: [ '36', '35', '34' ]
+        dist-version: [ '38', '37', '36', '35', '34' ]
         tarantool-version: [ '2.11' ]
         build: [ 'script', 'manual' ]
 
