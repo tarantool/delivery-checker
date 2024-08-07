@@ -15,6 +15,7 @@ distrib_to_json_name: dict = {
 Nobody remembers the Debian release names
 """
 debian_version_to_name: dict = {
+    '12': 'bookworm',
     '11': 'bullseye',
     '10': 'buster',
     '9': 'stretch',
