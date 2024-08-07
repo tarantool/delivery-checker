@@ -33,7 +33,7 @@
       "docker": {
         "image": "centos",
         "versions": [
-          "7",
+          "tarantool/delivery-checker:centos-7",
           "8"
         ]
       }
