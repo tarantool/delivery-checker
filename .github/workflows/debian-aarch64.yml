@@ -38,7 +38,7 @@ jobs:
       fail-fast: false
       matrix:
         dist-version: [ '12', '11', '10' ]
-        tarantool-version: [ '2.11.3' ]
+        tarantool-version: [ '2.11.4' ]
         build: [ 'script', 'manual' ]
 
     runs-on: [ self-hosted, graviton ]

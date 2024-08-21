@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         dist-version: [ '22.04', '20.04', '18.04', '16.04' ]
-        tarantool-version: [ '2.11.3' ]
+        tarantool-version: [ '2.11.4' ]
         pkg-type: [ 'nogc64', 'gc64' ]
         build: [ 'script', 'manual' ]
         exclude:
